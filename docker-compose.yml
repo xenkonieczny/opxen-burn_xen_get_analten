@@ -1,0 +1,12 @@
+services:
+  burner:
+    build: .
+    container_name: opxen-burner
+    restart: always
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DB_PATH=/app/data/burns.db
+      - CSV_PATH=/app/data/burns_export.csv

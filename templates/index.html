@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>opXEN Burner × ANALtena</title>
+
+  <!-- Buffer polyfill (required by solana-web3.js in browser) -->
+  <script src="https://bundle.run/buffer@6.0.3"></script>
+  <script>window.Buffer = window.Buffer || buffer.Buffer;</script>
+  <!-- EVM -->
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.9.0/dist/web3.min.js"></script>
+  <!-- SVM -->
+  <script src="https://unpkg.com/@solana/web3.js@1.95.4/lib/index.iife.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange:   #ff4d00;
+      --orange2:  #ff8800;
+      --purple:   #a855f7;
+      --purple2:  #7c3aed;
+      --green:    #4ade80;
+      --red:      #f87171;
+      --bg:       #050508;
+      --card-bg:  rgba(255,255,255,0.025);
+      --border:   rgba(255,255,255,0.06);
+      --text:     #e0e0e6;
+      --muted:    #555;
+    }
+
+    body {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Gradient mesh background */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 600px 400px at 20% 10%, rgba(255,77,0,.08) 0%, transparent 70%),
+        radial-gradient(ellipse 500px 500px at 80% 90%, rgba(168,85,247,.06) 0%, transparent 70%),
+        radial-gradient(ellipse 300px 300px at 60% 40%, rgba(255,136,0,.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container { position:relative; z-index:1; width:100%; max-width:480px; }
+
+    /* Header */
+    .header { text-align:center; margin-bottom:1.75rem; }
+    .logo-mark {
+      width:56px; height:56px; border-radius:16px; margin:0 auto 1rem;
+      background:linear-gradient(135deg,var(--orange),var(--orange2));
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.6rem;
+      box-shadow:0 0 40px rgba(255,77,0,.3), 0 0 80px rgba(255,77,0,.1);
+    }
+    .header h1 {
+      font-size:1.5rem; font-weight:700; color:#fff;
+      letter-spacing:-.02em;
+    }
+    .tagline {
+      font-size:.95rem; font-weight:600; margin-top:.5rem;
+      background:linear-gradient(90deg,var(--orange),var(--purple));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      letter-spacing:.01em;
+    }
+    .header .sub { font-size:.72rem; color:var(--muted); margin-top:.4rem; }
+
+    /* Network pills */
+    .networks { display:flex; justify-content:center; gap:.4rem; margin-top:.65rem; }
+    .net-pill {
+      display:inline-flex; align-items:center; gap:.3rem;
+      padding:.2rem .55rem; border-radius:20px;
+      font-size:.6rem; font-weight:600; letter-spacing:.03em;
+    }
+    .net-pill.op  { background:rgba(255,77,0,.07); border:1px solid rgba(255,77,0,.15); color:#ff6b2b; }
+    .net-pill.x1  { background:rgba(168,85,247,.07); border:1px solid rgba(168,85,247,.15); color:#c084fc; }
+    .net-dot { width:4px; height:4px; border-radius:50%; background:currentColor; }
+
+    /* Epoch bar */
+    .epoch-bar {
+      display:flex; align-items:center; justify-content:center; gap:.5rem;
+      background:rgba(255,255,255,.02); border:1px solid var(--border);
+      border-radius:10px; padding:.4rem .9rem; margin-bottom:1.25rem;
+      font-size:.7rem; color:var(--muted);
+      font-family:'JetBrains Mono', monospace;
+    }
+    .epoch-bar .label { color:var(--muted); }
+    .epoch-bar .val   { color:var(--orange2); font-weight:600; }
+
+    /* Card */
+    .card {
+      background:var(--card-bg);
+      border:1px solid var(--border);
+      border-radius:18px; padding:1.75rem;
+      backdrop-filter:blur(12px);
+      box-shadow:0 2px 40px rgba(0,0,0,.4);
+      margin-bottom:.75rem;
+    }
+
+    .section-label {
+      font-size:.65rem; font-weight:600; letter-spacing:.1em;
+      text-transform:uppercase; color:var(--muted); margin-bottom:.6rem;
+    }
+
+    /* Wallet row */
+    .wallet-row {
+      display:flex; align-items:center; gap:.7rem;
+      padding:.7rem .85rem;
+      border:1px solid var(--border);
+      border-radius:12px; background:rgba(255,255,255,.02);
+      margin-bottom:.85rem;
+    }
+    .wallet-dot {
+      width:32px; height:32px; border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:.85rem; flex-shrink:0;
+    }
+    .wallet-dot.evm { background:linear-gradient(135deg,rgba(255,77,0,.2),rgba(255,136,0,.2)); }
+    .wallet-dot.svm { background:linear-gradient(135deg,rgba(168,85,247,.2),rgba(124,58,237,.2)); }
+    .wallet-info { flex:1; min-width:0; }
+    .wallet-info .label { font-size:.65rem; color:var(--muted); font-weight:500; }
+    .wallet-info .addr  {
+      font-size:.82rem; font-weight:600; color:#fff;
+      font-family:'JetBrains Mono', monospace;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .wallet-info .addr.empty { color:var(--muted); font-weight:400; font-family:'Space Grotesk', sans-serif; }
+
+    .connect-btn {
+      padding:.4rem .75rem; border-radius:8px; border:1px solid var(--border);
+      font-family:inherit; font-size:.72rem; font-weight:600;
+      cursor:pointer; transition:all .2s; flex-shrink:0;
+      background:rgba(255,255,255,.04); color:#ccc;
+    }
+    .connect-btn:hover:not(:disabled) {
+      background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.15);
+      transform:translateY(-1px);
+    }
+    .connect-btn:disabled { opacity:.35; cursor:not-allowed; }
+    .connect-btn.done { background:rgba(74,222,128,.1); border-color:rgba(74,222,128,.2); color:var(--green); }
+
+    /* Wallet selector */
+    .wallet-selector {
+      display:grid; grid-template-columns:1fr 1fr; gap:.5rem;
+      margin-bottom:.7rem;
+    }
+    .wallet-opt {
+      display:flex; align-items:center; gap:.5rem;
+      padding:.55rem .75rem;
+      border:1px solid var(--border); border-radius:10px;
+      background:rgba(255,255,255,.02);
+      font-family:inherit; font-size:.75rem; font-weight:600;
+      color:#999; cursor:pointer; transition:all .2s;
+    }
+    .wallet-opt:hover {
+      background:rgba(168,85,247,.08);
+      border-color:rgba(168,85,247,.25);
+      color:#fff;
+    }
+    .wallet-opt:disabled { opacity:.35; cursor:not-allowed; }
+    .wallet-opt .wicon { font-size:1rem; }
+    .wallet-opt small  { font-size:.58rem; color:var(--muted); display:block; font-weight:400; }
+
+    /* Divider */
+    .divider { height:1px; background:var(--border); margin:1.2rem 0; }
+
+    /* Input */
+    .input-group { margin-bottom:1rem; }
+    .input-group label {
+      display:block; font-size:.65rem; font-weight:600;
+      color:var(--muted); margin-bottom:.4rem;
+      letter-spacing:.08em; text-transform:uppercase;
+    }
+    .input-group input {
+      width:100%; padding:.75rem .9rem;
+      border:1px solid var(--border); border-radius:10px;
+      background:rgba(255,255,255,.03); color:#fff;
+      font-family:'JetBrains Mono', monospace; font-size:.9rem; font-weight:400;
+      outline:none; transition:border-color .2s, box-shadow .2s;
+    }
+    .input-group input::placeholder { color:#333; }
+    .input-group input:focus {
+      border-color:rgba(255,77,0,.4);
+      box-shadow:0 0 0 3px rgba(255,77,0,.08);
+    }
+
+    /* Buttons */
+    .btn-row { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+    .btn {
+      width:100%; padding:.75rem .9rem;
+      border-radius:10px; border:none;
+      font-family:inherit; font-size:.82rem; font-weight:700;
+      cursor:pointer; transition:all .15s;
+    }
+    .btn:disabled { opacity:.25; cursor:not-allowed; }
+
+    .btn-approve {
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      color:#aaa;
+    }
+    .btn-approve:not(:disabled):hover { background:rgba(255,255,255,.08); transform:translateY(-1px); }
+
+    .btn-burn {
+      background:linear-gradient(135deg,rgba(255,77,0,.15),rgba(255,136,0,.15));
+      border:1px solid rgba(255,77,0,.25);
+      color:#ff8800;
+    }
+    .btn-burn:not(:disabled):hover {
+      background:linear-gradient(135deg,rgba(255,77,0,.25),rgba(255,136,0,.25));
+      transform:translateY(-1px);
+    }
+
+    .btn-link {
+      background:linear-gradient(135deg,var(--purple),var(--purple2));
+      color:#fff;
+      box-shadow:0 4px 20px rgba(168,85,247,.2);
+    }
+    .btn-link:not(:disabled):hover { transform:translateY(-1px); opacity:.9; }
+
+    .btn-ghost {
+      background:transparent;
+      border:1px solid var(--border);
+      color:#777;
+    }
+    .btn-ghost:not(:disabled):hover { background:rgba(255,255,255,.04); color:#aaa; }
+
+    /* Fee badge */
+    .fee-badge {
+      display:inline-flex; align-items:center; gap:.35rem;
+      padding:.3rem .7rem; border-radius:20px;
+      background:rgba(168,85,247,.08); border:1px solid rgba(168,85,247,.18);
+      font-size:.67rem; font-weight:600; color:#c084fc; margin-bottom:.85rem;
+    }
+
+    /* Status text */
+    .status-text {
+      text-align:center; font-size:.72rem; color:var(--muted);
+      margin-top:.75rem; min-height:1rem; word-break:break-all;
+      transition:color .3s;
+    }
+    .status-text.ok  { color:var(--green); }
+    .status-text.err { color:var(--red); }
+
+    /* Burn history */
+    .burn-history { margin-top:.85rem; }
+    .burn-entry {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:.45rem .7rem;
+      border:1px solid var(--border); border-radius:8px;
+      background:rgba(255,255,255,.015); margin-bottom:.3rem;
+      font-size:.7rem;
+    }
+    .burn-entry .burn-amt {
+      font-weight:600; color:var(--orange2);
+      font-family:'JetBrains Mono', monospace;
+    }
+    .burn-entry .burn-time { color:var(--muted); font-family:'JetBrains Mono', monospace; font-size:.65rem; }
+
+    /* Stats bar */
+    .stats-bar {
+      display:grid; grid-template-columns:1fr 1fr 1fr; gap:.4rem;
+      margin-top:.85rem;
+    }
+    .stat-cell {
+      background:rgba(255,255,255,.02);
+      border:1px solid var(--border);
+      border-radius:8px; padding:.5rem; text-align:center;
+    }
+    .stat-cell .k { font-size:.55rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+    .stat-cell .v {
+      font-size:.8rem; font-weight:700; color:#fff; margin-top:.1rem;
+      font-family:'JetBrains Mono', monospace;
+    }
+
+    /* Success panel */
+    .success-panel { text-align:center; display:none; }
+    .success-panel.show { display:block; }
+    .success-icon {
+      font-size:2.5rem; margin-bottom:.75rem;
+      animation:pop .5s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    @keyframes pop {
+      0%   { transform:scale(0); }
+      80%  { transform:scale(1.15); }
+      100% { transform:scale(1); }
+    }
+    .success-panel h2 { font-size:1.2rem; font-weight:700; color:#fff; margin-bottom:.4rem; }
+    .success-panel p  { font-size:.78rem; color:var(--muted); line-height:1.5; }
+
+    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:.4rem; margin-top:.85rem; }
+    .info-cell {
+      background:rgba(255,255,255,.02);
+      border:1px solid var(--border);
+      border-radius:10px; padding:.6rem;
+    }
+    .info-cell .k { font-size:.58rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+    .info-cell .v {
+      font-size:.78rem; font-weight:600; color:#fff; margin-top:.15rem;
+      word-break:break-all; font-family:'JetBrains Mono', monospace;
+    }
+
+    /* Footer */
+    .footer { text-align:center; margin-top:1rem; font-size:.62rem; color:#2a2a2a; }
+    .footer a { color:#444; text-decoration:none; transition:color .2s; }
+    .footer a:hover { color:var(--orange2); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+      <div class="logo-mark">🔥</div>
+      <h1>opXEN Burner</h1>
+      <div class="tagline">Burn opXEN get ANALten</div>
+      <div class="sub">24h auction system</div>
+      <div class="networks">
+        <span class="net-pill op"><span class="net-dot"></span>Optimism</span>
+        <span class="net-pill x1"><span class="net-dot"></span>X1</span>
+      </div>
+    </div>
+
+    <!-- EPOCH BAR -->
+    <div class="epoch-bar">
+      <span class="label">Epoch</span>
+      <span class="val" id="epochDate">—</span>
+      <span class="label">|</span>
+      <span class="label">Ends in</span>
+      <span class="val" id="epochTimer">—</span>
+    </div>
+
+    <!-- ══ BURN CARD ══ -->
+    <div class="card" id="burnCard">
+
+      <p class="section-label">EVM Wallet (Optimism)</p>
+
+      <div class="wallet-row">
+        <div class="wallet-dot evm">⬡</div>
+        <div class="wallet-info">
+          <div class="label">EVM Wallet · Optimism Mainnet</div>
+          <div class="addr empty" id="evmAddrDisplay">Not connected</div>
+        </div>
+        <button class="connect-btn" id="connectEvmBtn">Connect</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="input-group">
+        <label for="amount">Amount of opXEN to burn</label>
+        <input type="number" id="amount" placeholder="e.g. 3000000" min="0" step="any" />
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-approve" id="approveBtn" disabled>Approve</button>
+        <button class="btn btn-burn"    id="burnBtn"    disabled>Burn 🔥</button>
+      </div>
+
+      <div class="status-text" id="evmStatus">Connect wallet to continue</div>
+
+      <!-- Stats after burn -->
+      <div class="stats-bar" id="burnStats" style="display:none">
+        <div class="stat-cell">
+          <div class="k">Your burns</div>
+          <div class="v" id="statMyTotal">0</div>
+        </div>
+        <div class="stat-cell">
+          <div class="k">Your share</div>
+          <div class="v" id="statMyShare">0%</div>
+        </div>
+        <div class="stat-cell">
+          <div class="k">Participants</div>
+          <div class="v" id="statParticipants">0</div>
+        </div>
+      </div>
+
+      <!-- Burn history -->
+      <div class="burn-history" id="burnHistory"></div>
+
+      <div class="divider"></div>
+
+      <button class="btn btn-link" id="goLinkBtn" disabled style="margin-top:.3rem">
+        Link wallets (step 2) →
+      </button>
+      <p style="font-size:.65rem; color:var(--muted); text-align:center; margin-top:.35rem;">
+        You can burn multiple times — proceed to step 2 when done
+      </p>
+    </div>
+
+    <!-- ══ LINK CARD ══ -->
+    <div class="card" id="linkCard" style="display:none">
+
+      <p class="section-label">Link SVM Wallet (X1)</p>
+
+      <button class="btn btn-ghost" id="backToBurnBtn" style="margin-bottom:.85rem; font-size:.75rem">
+        ← Back to burning
+      </button>
+
+      <!-- Wallet selector -->
+      <div class="wallet-selector">
+        <button class="wallet-opt" id="btnBackpack">
+          <span class="wicon">🎒</span>
+          <div>
+            <span>Backpack</span>
+            <small>backpack.app</small>
+          </div>
+        </button>
+        <button class="wallet-opt" id="btnX1">
+          <span class="wicon">⚡</span>
+          <div>
+            <span>X1 Wallet</span>
+            <small>fork Backpack</small>
+          </div>
+        </button>
+      </div>
+
+      <div class="wallet-row">
+        <div class="wallet-dot svm">◈</div>
+        <div class="wallet-info">
+          <div class="label" id="svmWalletLabel">Backpack / X1 Wallet · X1</div>
+          <div class="addr empty" id="svmAddrDisplay">Not connected</div>
+        </div>
+        <button class="connect-btn" id="connectSvmBtn" disabled>Connect</button>
+      </div>
+
+      <div style="margin-top:.2rem">
+        <div class="fee-badge">
+          💜 Registration fee: <strong>0.1 XNT</strong>
+        </div>
+      </div>
+
+      <p style="font-size:.72rem; color:var(--muted); line-height:1.5; margin-bottom:1rem;">
+        Pay a one-time fee of 0.1 XNT on X1 — this creates a permanent
+        link between your EVM and SVM wallets.
+      </p>
+
+      <button class="btn btn-link" id="payAndLinkBtn" disabled>
+        Pay 0.1 XNT & Link Wallets
+      </button>
+
+      <div class="status-text" id="svmStatus">Select SVM wallet above</div>
+    </div>
+
+    <!-- ══ SUCCESS CARD ══ -->
+    <div class="card" id="successCard" style="display:none">
+      <div class="success-panel show">
+        <div class="success-icon">🎉</div>
+        <h2>Wallets Linked!</h2>
+        <p>Your wallets have been successfully linked.</p>
+
+        <div class="info-grid">
+          <div class="info-cell">
+            <div class="k">EVM</div>
+            <div class="v" id="s3evm">—</div>
+          </div>
+          <div class="info-cell">
+            <div class="k">SVM</div>
+            <div class="v" id="s3svm">—</div>
+          </div>
+          <div class="info-cell">
+            <div class="k">opXEN burned (epoch)</div>
+            <div class="v" id="s3burned">—</div>
+          </div>
+          <div class="info-cell">
+            <div class="k">Your share</div>
+            <div class="v" id="s3share">—</div>
+          </div>
+        </div>
+
+        <button class="btn btn-burn" id="burnMoreBtn" style="margin-top:1rem">
+          Burn more opXEN 🔥
+        </button>
+      </div>
+    </div>
+
+    <div class="footer">
+      opXEN Contract ·
+      <a href="https://optimistic.etherscan.io/address/0x83E96ff0944BD10aF19A054902225357DccE6d91" target="_blank" rel="noopener">Etherscan</a>
+      &nbsp;·&nbsp;
+      <a href="/api/leaderboard" target="_blank">Leaderboard</a>
+      &nbsp;·&nbsp;
+      <a href="/api/export/csv" target="_blank">Export CSV</a>
+      &nbsp;·&nbsp;
+      <a href="/api/db/burns" target="_blank">DB Burns</a>
+    </div>
+  </div>
+
+  <script>
+    // ─── CONFIG ───────────────────────────────────────────────────────────────
+    const XEN_ADDRESS    = "0xeB585163DEbB1E637c6D617de3bEF99347cd75c8";
+    const BURNER_ADDRESS = "0x83E96ff0944BD10aF19A054902225357DccE6d91";
+    const OPTIMISM_CHAIN = 10;
+
+    // XNT = native token on X1 (like SOL on Solana)
+    const XNT_TREASURY   = "F3eBDrrSmEnjNAHex7i1CXB9Mr2d1n192iNH2sPM8X98";
+    const XNT_DECIMALS   = 9;
+    const XNT_FEE_LAMPORTS = Math.floor(0.1 * 10 ** XNT_DECIMALS);
+
+    // ─── ABI ─────────────────────────────────────────────────────────────────
+    const xenAbi = [
+      {
+        inputs: [],
+        name: "decimals",
+        outputs: [{ internalType: "uint8", name: "", type: "uint8" }],
+        stateMutability: "view",
+        type: "function"
+      },
+      {
+        inputs: [
+          { internalType: "address", name: "spender", type: "address" },
+          { internalType: "uint256", name: "amount",  type: "uint256" }
+        ],
+        name: "approve",
+        outputs: [{ internalType: "bool", name: "", type: "bool" }],
+        stateMutability: "nonpayable",
+        type: "function"
+      },
+      {
+        inputs: [
+          { internalType: "address", name: "owner",   type: "address" },
+          { internalType: "address", name: "spender", type: "address" }
+        ],
+        name: "allowance",
+        outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+        stateMutability: "view",
+        type: "function"
+      }
+    ];
+
+    const burnerAbi = [
+      {
+        inputs: [{ internalType: "uint256", name: "amount", type: "uint256" }],
+        name: "burn",
+        outputs: [],
+        stateMutability: "nonpayable",
+        type: "function"
+      }
+    ];
+
+    // ─── STATE ────────────────────────────────────────────────────────────────
+    let web3, xenContract, burnerContract;
+    let evmAccount    = null;
+    let svmPublicKey  = null;
+    let svmProvider   = null;
+    let svmWalletName = '';
+    let tokenDecimals;
+    let burnHistory   = [];
+
+    // ─── HELPERS ──────────────────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+
+    function setStatus(el, text, type) {
+      el.textContent = text;
+      el.className   = 'status-text' + (type ? ' ' + type : '');
+    }
+
+    function shortAddr(addr) {
+      if (!addr) return '—';
+      return addr.slice(0,6) + '...' + addr.slice(-4);
+    }
+
+    function toWei(rawAmount, decimals) {
+      const factor = BigInt(10) ** BigInt(decimals);
+      return (BigInt(Math.floor(Number(rawAmount))) * factor).toString();
+    }
+
+    function fmtNum(n) {
+      return Number(n).toLocaleString('en');
+    }
+
+    // ─── VIEWS ────────────────────────────────────────────────────────────────
+    function showView(view) {
+      $('burnCard').style.display    = (view === 'burn')    ? 'block' : 'none';
+      $('linkCard').style.display    = (view === 'link')    ? 'block' : 'none';
+      $('successCard').style.display = (view === 'success') ? 'block' : 'none';
+    }
+
+    // ─── EPOCH TIMER ──────────────────────────────────────────────────────────
+    function updateEpochTimer() {
+      const now  = new Date();
+      const utc  = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      const next = new Date(utc.getTime() + 86400000);
+      const diff = next.getTime() - now.getTime();
+
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+
+      $('epochDate').textContent = utc.toISOString().slice(0,10);
+      $('epochTimer').textContent = `${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+    }
+    setInterval(updateEpochTimer, 1000);
+    updateEpochTimer();
+
+    // ─── RENDER BURN HISTORY ──────────────────────────────────────────────────
+    function renderBurnHistory() {
+      const el = $('burnHistory');
+      if (burnHistory.length === 0) { el.innerHTML = ''; return; }
+      el.innerHTML = '<p class="section-label" style="margin-top:.5rem">Burn history (this epoch)</p>' +
+        burnHistory.map(b =>
+          `<div class="burn-entry">
+            <span class="burn-amt">${fmtNum(b.amount)} opXEN</span>
+            <span class="burn-time">${b.time}</span>
+          </div>`
+        ).join('');
+    }
+
+    // ─── EVM – CONNECT ────────────────────────────────────────────────────────
+    $('connectEvmBtn').onclick = async () => {
+      if (!window.ethereum) return alert("No EVM wallet detected. Please install an EVM-compatible wallet (MetaMask, Rabby, etc.).");
+      web3 = new Web3(window.ethereum);
+      try {
+        const accs    = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        evmAccount    = accs[0];
+        const chainId = await web3.eth.getChainId();
+        if (Number(chainId) !== OPTIMISM_CHAIN)
+          return alert(`Please switch to Optimism Mainnet (chainId=10). Current: ${chainId}`);
+
+        xenContract    = new web3.eth.Contract(xenAbi,    XEN_ADDRESS);
+        burnerContract = new web3.eth.Contract(burnerAbi, BURNER_ADDRESS);
+        const dec      = await xenContract.methods.decimals().call();
+        tokenDecimals  = Number(dec);
+
+        $('evmAddrDisplay').textContent = shortAddr(evmAccount);
+        $('evmAddrDisplay').classList.remove('empty');
+        $('connectEvmBtn').textContent = '✓';
+        $('connectEvmBtn').classList.add('done');
+        $('connectEvmBtn').disabled    = true;
+        $('approveBtn').disabled = false;
+        $('burnBtn').disabled    = false;
+        $('goLinkBtn').disabled  = false;
+        setStatus($('evmStatus'), `Connected: ${evmAccount}`, 'ok');
+      } catch(e) {
+        setStatus($('evmStatus'), 'Error: ' + (e.message || e), 'err');
+      }
+    };
+
+    // ─── EVM – APPROVE ────────────────────────────────────────────────────────
+    $('approveBtn').onclick = async () => {
+      const raw = $('amount').value.replace(/\s/g,'');
+      if (!raw || isNaN(raw) || Number(raw) <= 0) return alert("Enter opXEN amount.");
+      const amtWei = toWei(raw, tokenDecimals);
+      try {
+        setStatus($('evmStatus'), "Waiting for Approve confirmation...");
+        await xenContract.methods.approve(BURNER_ADDRESS, amtWei).send({ from: evmAccount });
+        setStatus($('evmStatus'), "Approve OK! You can now burn.", 'ok');
+      } catch(e) {
+        setStatus($('evmStatus'), 'Approve error: ' + (e.message || e), 'err');
+      }
+    };
+
+    // ─── EVM – BURN ───────────────────────────────────────────────────────────
+    $('burnBtn').onclick = async () => {
+      const raw = $('amount').value.replace(/\s/g,'');
+      if (!raw || isNaN(raw) || Number(raw) <= 0) return alert("Enter opXEN amount.");
+      const amtWei = toWei(raw, tokenDecimals);
+
+      const alw = await xenContract.methods.allowance(evmAccount, BURNER_ADDRESS).call();
+      if (BigInt(alw) < BigInt(amtWei))
+        return alert("Click Approve first!");
+
+      try {
+        await burnerContract.methods.burn(amtWei).call({ from: evmAccount });
+      } catch(sim) {
+        return alert("Transaction will fail:\n" + (sim.message || sim));
+      }
+
+      try {
+        setStatus($('evmStatus'), "Burning in progress...");
+        const tx = await burnerContract.methods.burn(amtWei).send({ from: evmAccount });
+
+        const resp = await fetch('/api/burn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            evm_address: evmAccount,
+            burn_tx:     tx.transactionHash,
+            burn_amount: raw
+          })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Server error');
+
+        const now = new Date();
+        burnHistory.unshift({
+          tx: tx.transactionHash,
+          amount: raw,
+          time: now.toLocaleTimeString('en')
+        });
+        renderBurnHistory();
+
+        $('burnStats').style.display = 'grid';
+        $('statMyTotal').textContent = fmtNum(data.my_total);
+        $('statMyShare').textContent = data.my_share_pct.toFixed(2) + '%';
+        $('statParticipants').textContent = data.participants;
+
+        setStatus($('evmStatus'),
+          `✓ Burned ${fmtNum(raw)} opXEN! (total: ${fmtNum(data.my_total)})`, 'ok');
+
+        $('amount').value = '';
+
+      } catch(e) {
+        setStatus($('evmStatus'), 'Burn error: ' + (e.message || e), 'err');
+      }
+    };
+
+    // ─── NAVIGATION ───────────────────────────────────────────────────────────
+    $('goLinkBtn').onclick     = () => showView('link');
+    $('backToBurnBtn').onclick = () => showView('burn');
+    $('burnMoreBtn').onclick   = () => showView('burn');
+
+    // ─── SVM – WALLET SELECTION ───────────────────────────────────────────────
+    function selectSvmWallet(name, icon) {
+      svmWalletName = name;
+      $('svmWalletLabel').textContent = name + ' · X1';
+      $('connectSvmBtn').disabled = false;
+      setStatus($('svmStatus'), `Selected: ${name} — click Connect`, '');
+    }
+
+    $('btnBackpack').onclick = () => selectSvmWallet('Backpack', '🎒');
+    $('btnX1').onclick       = () => selectSvmWallet('X1 Wallet', '⚡');
+
+    // ─── SVM – CONNECT ───────────────────────────────────────────────────────
+    $('connectSvmBtn').onclick = async () => {
+      const bp = window.backpack;
+      if (!bp) {
+        return alert(
+          `${svmWalletName || 'Backpack/X1'} not found!\n\n` +
+          'Install Backpack Wallet from backpack.app\n' +
+          'X1 Wallet is a Backpack fork — uses the same extension\n' +
+          'with custom RPC: https://rpc.mainnet.x1.xyz'
+        );
+      }
+      svmProvider = bp;
+      try {
+        const resp = await svmProvider.connect();
+        svmPublicKey = (resp.publicKey || svmProvider.publicKey).toString();
+
+        $('svmAddrDisplay').textContent = shortAddr(svmPublicKey);
+        $('svmAddrDisplay').classList.remove('empty');
+        $('connectSvmBtn').textContent  = '✓';
+        $('connectSvmBtn').classList.add('done');
+        $('connectSvmBtn').disabled     = true;
+        $('payAndLinkBtn').disabled     = false;
+
+        $('btnBackpack').disabled = true;
+        $('btnX1').disabled       = true;
+
+        setStatus($('svmStatus'), `${svmWalletName}: ${svmPublicKey}`, 'ok');
+      } catch(e) {
+        setStatus($('svmStatus'),
+          `${svmWalletName} error: ` + (e.message || e), 'err');
+      }
+    };
+
+    // ─── SVM – PAY XNT + LINK ────────────────────────────────────────────────
+    $('payAndLinkBtn').onclick = async () => {
+      if (!svmPublicKey || !evmAccount) return;
+
+      setStatus($('svmStatus'), "Preparing XNT transfer...");
+
+      let xntTxSig;
+
+      try {
+        const rpcUrl     = "https://rpc.mainnet.x1.xyz";
+        const connection = new solanaWeb3.Connection(rpcUrl, "confirmed");
+
+        const treasuryPk = new solanaWeb3.PublicKey(XNT_TREASURY);
+        const payerPk    = new solanaWeb3.PublicKey(svmPublicKey);
+
+        const transferIx = solanaWeb3.SystemProgram.transfer({
+          fromPubkey: payerPk,
+          toPubkey:   treasuryPk,
+          lamports:   XNT_FEE_LAMPORTS
+        });
+
+        const { blockhash } = await connection.getLatestBlockhash();
+        const tx = new solanaWeb3.Transaction();
+        tx.add(transferIx);
+        tx.recentBlockhash = blockhash;
+        tx.feePayer = payerPk;
+
+        setStatus($('svmStatus'), "Confirm transaction in wallet...");
+
+        const result = await svmProvider.signAndSendTransaction(tx);
+        xntTxSig = result.signature;
+
+      } catch(e) {
+        setStatus($('svmStatus'), 'XNT payment error: ' + (e.message || e), 'err');
+        return;
+      }
+
+      setStatus($('svmStatus'), "Registering wallet link...");
+
+      try {
+        const resp = await fetch('/api/link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            evm_address: evmAccount,
+            svm_address: svmPublicKey,
+            xnt_tx:      xntTxSig
+          })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Server error');
+
+        const statusResp = await fetch(`/api/status/${evmAccount}`);
+        const statusData = await statusResp.json();
+
+        $('s3evm').textContent    = shortAddr(evmAccount);
+        $('s3svm').textContent    = shortAddr(svmPublicKey);
+        $('s3burned').textContent = fmtNum(statusData.my_total) + ' opXEN';
+        $('s3share').textContent  = statusData.my_share_pct.toFixed(2) + '%';
+
+        showView('success');
+      } catch(e) {
+        setStatus($('svmStatus'), 'Error: ' + (e.message || e), 'err');
+      }
+    };
+
+    // Init
+    showView('burn');
+  </script>
+</body>
+</html>
