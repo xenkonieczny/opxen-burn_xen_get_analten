@@ -16,23 +16,21 @@ Wykonaj kolejno:
 1. Sprawdź czy Docker jest zainstalowany (`docker --version`). Jeśli nie — zainstaluj:
    curl -fsSL https://get.docker.com | sh
    sudo apt install -y docker-compose-plugin
-   sudo usermod -aG docker ATENA
+   sudo usermod -aG docker ubuntu
 
 2. Sprawdź czy git jest zainstalowany. Jeśli nie: sudo apt install -y git
 
 3. Utwórz użytkownika ATENA jeśli nie istnieje:
-   id ATENA || (useradd -m -s /bin/bash ATENA && usermod -aG docker ATENA)
+   mkdir -p /home/ubuntu/ATENA
 
-4. Sklonuj repozytorium do katalogu /home/ATENA/opxen:
-   git clone https://github.com/xenkonieczny/opxen-burn_xen_get_analten.git /home/ATENA/opxen
-   chown -R ATENA:ATENA /home/ATENA/opxen
+4. Sklonuj repozytorium do katalogu /home/ubuntu/ATENA/opxen:
+   git clone https://github.com/xenkonieczny/opxen-burn_xen_get_analten.git /home/ubuntu/ATENA/opxen
 
 5. Utwórz katalog data:
-   mkdir -p /home/ATENA/opxen/data
-   chown ATENA:ATENA /home/ATENA/opxen/data
+   mkdir -p /home/ubuntu/ATENA/opxen/data
 
 6. Uruchom aplikację:
-   cd /home/ATENA/opxen && docker compose up -d --build
+   cd /home/ubuntu/ATENA/opxen && docker compose up -d --build
 
 7. Sprawdź czy działa:
    docker compose ps
