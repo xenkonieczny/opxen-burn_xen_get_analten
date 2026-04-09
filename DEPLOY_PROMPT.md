@@ -16,26 +16,31 @@ Wykonaj kolejno:
 1. Sprawdź czy Docker jest zainstalowany (`docker --version`). Jeśli nie — zainstaluj:
    curl -fsSL https://get.docker.com | sh
    sudo apt install -y docker-compose-plugin
-   sudo usermod -aG docker root
+   sudo usermod -aG docker ATENA
 
 2. Sprawdź czy git jest zainstalowany. Jeśli nie: sudo apt install -y git
 
-3. Sklonuj repozytorium do katalogu /root/opxen:
-   git clone https://github.com/xenkonieczny/opxen-burn_xen_get_analten.git /root/opxen
+3. Utwórz użytkownika ATENA jeśli nie istnieje:
+   id ATENA || (useradd -m -s /bin/bash ATENA && usermod -aG docker ATENA)
 
-4. Wejdź do /root/opxen i utwórz katalog data:
-   mkdir -p /root/opxen/data
+4. Sklonuj repozytorium do katalogu /home/ATENA/opxen:
+   git clone https://github.com/xenkonieczny/opxen-burn_xen_get_analten.git /home/ATENA/opxen
+   chown -R ATENA:ATENA /home/ATENA/opxen
 
-5. Uruchom aplikację:
-   cd /root/opxen && docker compose up -d --build
+5. Utwórz katalog data:
+   mkdir -p /home/ATENA/opxen/data
+   chown ATENA:ATENA /home/ATENA/opxen/data
 
-6. Sprawdź czy działa:
+6. Uruchom aplikację:
+   cd /home/ATENA/opxen && docker compose up -d --build
+
+7. Sprawdź czy działa:
    docker compose ps
    curl http://localhost:8001/api/stats
 
-7. Zainstaluj Nginx jeśli nie ma: sudo apt install -y nginx
+8. Zainstaluj Nginx jeśli nie ma: sudo apt install -y nginx
 
-8. Utwórz plik /etc/nginx/sites-available/opxen z konfiguracją proxy na port 8001:
+9. Utwórz plik /etc/nginx/sites-available/opxen z konfiguracją proxy na port 8001:
    server {
        listen 80;
        server_name _;
@@ -47,18 +52,18 @@ Wykonaj kolejno:
        }
    }
 
-9. Włącz konfigurację Nginx:
+10. Włącz konfigurację Nginx:
    ln -sf /etc/nginx/sites-available/opxen /etc/nginx/sites-enabled/opxen
    rm -f /etc/nginx/sites-enabled/default
    nginx -t && systemctl reload nginx
 
-10. Skonfiguruj firewall:
+11. Skonfiguruj firewall:
     ufw allow 22/tcp
     ufw allow 80/tcp
     ufw allow 443/tcp
     ufw --force enable
 
-11. Na końcu wyświetl:
+12. Na końcu wyświetl:
     - status kontenera (docker compose ps)
     - wynik curl http://localhost:8001/api/stats
     - status nginx (systemctl status nginx --no-pager)
