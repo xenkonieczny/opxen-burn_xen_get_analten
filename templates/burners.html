@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ANALTENA — Burners Directory</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pink:#ff5db3; --pink-hot:#ff1493; --pink-muted:#c57aa8;
+    --gold:#ffd84d; --gold-deep:#ff9500; --ink:#220010;
+    --green:#4ade80;
+    --bg-card:rgba(35,0,22,.40); --bg-inset:rgba(0,0,0,.35);
+    --border:rgba(255,105,180,.20);
+    --fd:'Space Grotesk',system-ui,sans-serif;
+    --fm:'JetBrains Mono',ui-monospace,monospace;
+  }
+  @keyframes starMove{ from{transform:translateY(0)} to{transform:translateY(220px)} }
+  *{box-sizing:border-box}
+  html,body{margin:0; background:#000; color:#ffc1dc; font-family:var(--fd); -webkit-font-smoothing:antialiased}
+  body{
+    min-height:100vh; position:relative; overflow-x:hidden;
+    display:flex; align-items:center; justify-content:center;
+    padding:1.5rem 1.25rem 3rem;
+    background:
+      radial-gradient(circle at 50% 16%, rgba(255,0,140,.18), transparent 32%),
+      radial-gradient(circle at 50% 70%, rgba(133,0,255,.08), transparent 35%),
+      #000;
+  }
+  .stars{
+    position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.6;
+    background:
+      radial-gradient(2px 2px at 20px 30px,#fff,transparent 60%),
+      radial-gradient(2px 2px at 120px 90px,#fff,transparent 60%),
+      radial-gradient(1.5px 1.5px at 200px 40px,#fff,transparent 60%),
+      radial-gradient(2px 2px at 300px 130px,#fff,transparent 60%),
+      radial-gradient(1.5px 1.5px at 420px 60px,#fff,transparent 60%),
+      radial-gradient(2px 2px at 520px 150px,#fff,transparent 60%),
+      radial-gradient(1.5px 1.5px at 680px 70px,#fff,transparent 60%),
+      radial-gradient(2px 2px at 820px 40px,#fff,transparent 60%),
+      radial-gradient(2px 2px at 960px 120px,#fff,transparent 60%);
+    background-size:1000px 220px; animation:starMove 28s linear infinite;
+  }
+  .container{position:relative; z-index:1; width:100%; max-width:480px}
+
+  .card{
+    background:var(--bg-card); border:1px solid var(--border); border-radius:1.25rem;
+    padding:1.75rem 1.5rem; backdrop-filter:blur(10px);
+    box-shadow:0 0 40px rgba(255,20,147,.08);
+  }
+
+  h1{
+    font-family:var(--fd); font-size:1.6rem; font-weight:700; letter-spacing:-.02em;
+    text-align:center; margin:0 0 .25rem;
+    background:linear-gradient(90deg,#ff5db3,#ffd84d);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .subtitle{text-align:center; color:var(--pink-muted); font-size:.85rem; margin:0 0 1.25rem}
+
+  .section-label{font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.15em; color:var(--pink); margin:0 0 .6rem}
+
+  .burner-row{
+    display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+    padding:.8rem .9rem; background:var(--bg-inset); border:1px solid var(--border);
+    border-radius:.7rem; margin-bottom:.6rem;
+    text-decoration:none; transition:all .2s;
+  }
+  .burner-row:hover{border-color:var(--pink); background:rgba(255,20,147,.08); transform:translateY(-1px)}
+  .burner-row .left{display:flex; flex-direction:column; gap:.2rem; min-width:0}
+  .burner-row .name{color:#fff; font-weight:600; font-size:.92rem}
+  .burner-row .sub{color:var(--pink-muted); font-size:.75rem; line-height:1.35}
+  .burner-row .url{color:var(--gold); font-family:var(--fm); font-size:.72rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .burner-row .arrow{color:var(--pink); font-family:var(--fm); font-size:1rem; flex-shrink:0}
+
+  .divider{height:1px; background:var(--border); margin:1.2rem 0}
+
+  .back{
+    display:block; text-align:center; margin-top:1.25rem;
+    color:var(--pink-muted); font-size:.75rem; text-decoration:none;
+  }
+  .back a{color:var(--pink); text-decoration:none; font-weight:600}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div class="container">
+  <div class="card">
+    <div style="display:flex; justify-content:center; margin-bottom:.8rem">
+      <img src="/static/analtena-logo-main.png" alt="ANALTENA"
+           style="width:88px; height:88px; object-fit:contain; filter:drop-shadow(0 0 16px rgba(255,20,147,.35))">
+    </div>
+    <h1>🔥 Burners Directory</h1>
+    <p class="subtitle">Canonical XEN burn interfaces — bookmark them all.</p>
+
+    <p class="section-label">Our burners</p>
+
+    <a class="burner-row" href="https://dbxen.app/" target="_blank" rel="noopener">
+      <span class="left">
+        <span class="name">DBXEN.app <span style="color:var(--green); font-family:var(--fm); font-size:.65rem; margin-left:4px">· OURS</span></span>
+        <span class="sub">Our layer on top of DBXEN — cleaner UI, multi-chain burn dashboard.</span>
+        <span class="url">dbxen.app</span>
+      </span>
+      <span class="arrow">↗</span>
+    </a>
+
+    <a class="burner-row" href="http://127.0.0.1:8001/">
+      <span class="left">
+        <span class="name">ANALTENA × opXEN <span style="color:var(--green); font-family:var(--fm); font-size:.65rem; margin-left:4px">· YOU ARE HERE</span></span>
+        <span class="sub">Burn opXEN on Optimism, earn ANALTEN on X1.</span>
+        <span class="url">analtena.opxen.xyz</span>
+      </span>
+      <span class="arrow">↗</span>
+    </a>
+
+    <a class="burner-row" href="https://analytics-rho-tan.vercel.app/" target="_blank" rel="noopener">
+      <span class="left">
+        <span class="name">XEN Analytics <span style="color:var(--green); font-family:var(--fm); font-size:.65rem; margin-left:4px">· OURS</span></span>
+        <span class="sub">Our XEN ecosystem analytics dashboard — burns, mints, wallets across chains.</span>
+        <span class="url">analytics-rho-tan.vercel.app</span>
+      </span>
+      <span class="arrow">↗</span>
+    </a>
+
+    <div class="divider"></div>
+    <p class="section-label">Other burners</p>
+
+    <a class="burner-row" href="https://xen.network/" target="_blank" rel="noopener">
+      <span class="left">
+        <span class="name">XEN Network — Official</span>
+        <span class="sub">Mint &amp; burn XEN on Ethereum, BNB, Polygon, Optimism, Avalanche.</span>
+        <span class="url">xen.network</span>
+      </span>
+      <span class="arrow">↗</span>
+    </a>
+
+    <a class="burner-row" href="https://www.burnxen.com/" target="_blank" rel="noopener">
+      <span class="left">
+        <span class="name">burnXEN</span>
+        <span class="sub">Simple XEN burn interface — one click, multiple chains.</span>
+        <span class="url">burnxen.com</span>
+      </span>
+      <span class="arrow">↗</span>
+    </a>
+
+    <a class="burner-row" href="https://fenix.fyi/" target="_blank" rel="noopener">
+      <span class="left">
+        <span class="name">FENIX</span>
+        <span class="sub">Burn XEN, stake FENIX. Post-burn yield protocol.</span>
+        <span class="url">fenix.fyi</span>
+      </span>
+      <span class="arrow">↗</span>
+    </a>
+
+    <a class="burner-row" href="https://dbxen.org/" target="_blank" rel="noopener">
+      <span class="left">
+        <span class="name">DBXEN</span>
+        <span class="sub">Daily burn auctions — burn XEN, earn native chain rewards.</span>
+        <span class="url">dbxen.org</span>
+      </span>
+      <span class="arrow">↗</span>
+    </a>
+
+    <div class="divider"></div>
+    <p class="section-label">Others — tools &amp; explorers</p>
+
+    <a class="burner-row" href="https://ct.app/dashboard" target="_blank" rel="noopener">
+      <span class="left">
+        <span class="name">Cointool</span>
+        <span class="sub">Multi-wallet dashboard — bulk XEN mint/claim across chains.</span>
+        <span class="url">ct.app/dashboard</span>
+      </span>
+      <span class="arrow">↗</span>
+    </a>
+
+    <a class="burner-row" href="https://xen.pub/" target="_blank" rel="noopener">
+      <span class="left">
+        <span class="name">XEN.pub</span>
+        <span class="sub">Community XEN hub — stats, guides, ecosystem tools.</span>
+        <span class="url">xen.pub</span>
+      </span>
+      <span class="arrow">↗</span>
+    </a>
+
+    <a class="burner-row" href="https://xenmon.com/" target="_blank" rel="noopener">
+      <span class="left">
+        <span class="name">XENMON</span>
+        <span class="sub">XEN monitor — real-time mint/burn tracker across networks.</span>
+        <span class="url">xenmon.com</span>
+      </span>
+      <span class="arrow">↗</span>
+    </a>
+
+    <div class="divider"></div>
+    <p class="back">
+      <a href="/">← back to burner</a>
+    </p>
+  </div>
+</div>
+</body>
+</html>

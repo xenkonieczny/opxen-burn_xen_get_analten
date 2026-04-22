@@ -1,904 +1,486 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>opXEN Burner × ANALtena</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ANALTENA × opXEN Burner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink:#ff5db3; --pink-hot:#ff1493; --pink-soft:#ffc1dc; --pink-muted:#c57aa8;
+    --gold:#ffd84d; --gold-deep:#ff9500;
+    --black:#000; --ink:#220010;
+    --green:#4ade80; --red:#ff4466;
+    --bg-card:rgba(35,0,22,.40); --bg-inset:rgba(0,0,0,.35); --bg-inset-hi:rgba(0,0,0,.40);
+    --border:rgba(255,105,180,.20); --border-hi:rgba(255,93,179,.55);
+    --fg1:#ffc1dc; --fg2:#c57aa8;
+    --font-display:'Space Grotesk',system-ui,sans-serif;
+    --font-body:'Space Grotesk',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  @keyframes starMove { from { transform: translateY(0); } to { transform: translateY(220px); } }
+  html, body { margin:0; min-height:100vh; background:#000; color:var(--fg1); font-family:var(--font-body); -webkit-font-smoothing:antialiased; }
+  body {
+    display:flex; align-items:center; justify-content:center;
+    padding:1.5rem 1.5rem 3rem;
+    overflow-x:hidden; position:relative;
+    background:
+      radial-gradient(circle at 50% 16%, rgba(255,0,140,.18), transparent 32%),
+      radial-gradient(circle at 50% 70%, rgba(133,0,255,.08), transparent 35%),
+      #000;
+  }
+  .container { position:relative; z-index:1; width:100%; max-width:480px; }
 
-  <!-- Buffer polyfill (required by solana-web3.js in browser) -->
-  <script src="https://bundle.run/buffer@6.0.3"></script>
-  <script>window.Buffer = window.Buffer || buffer.Buffer;</script>
-  <!-- EVM -->
-  <script src="https://cdn.jsdelivr.net/npm/web3@1.9.0/dist/web3.min.js"></script>
-  <!-- SVM -->
-  <script src="https://unpkg.com/@solana/web3.js@1.95.4/lib/index.iife.min.js"></script>
+  h1.hero {
+    font-size:1.6rem; font-weight:700; text-align:center; margin:0 0 .25rem;
+    background:linear-gradient(90deg,#ff5db3,#ffd84d);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    letter-spacing:-.02em; font-family:var(--font-display);
+  }
+  .subtitle { text-align:center; color:var(--pink-muted); font-size:.85rem; margin-bottom:1.25rem; }
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  .steps { display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:1.25rem; }
+  .step-dot {
+    width:28px; height:28px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.7rem; font-weight:700;
+    border:1.5px solid var(--border);
+    background:var(--bg-card); color:var(--pink-muted);
+    font-family:var(--font-mono);
+  }
+  .step-dot.active { border-color:var(--pink); color:var(--pink); background:rgba(255,20,147,.1); }
+  .step-dot.done   { border-color:var(--green); color:#063; background:var(--green); }
+  .step-line { flex:0 0 32px; height:1px; background:var(--border); margin:0 4px; }
+  .step-line.done { background:var(--green); }
 
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; margin-top:1rem; }
 
-    :root {
-      --pink:   #ff5db3;
-      --pink2:  #ff1493;
-      --gold:   #ffd84d;
-      --soft:   #ffc1dc;
-      --green:  #4ade80;
-      --red:    #ff4466;
-      --bg:     #000;
-      --card-bg:  rgba(35,0,22,.40);
-      --border:   rgba(255,105,180,.20);
-      --text:     #ffc1dc;
-      --muted:    #c57aa8;
-    }
+  .tabs { display:flex; gap:6px; margin-bottom:1rem; }
+  .tab {
+    flex:1; padding:6px 10px; border-radius:8px;
+    background:var(--bg-inset); border:1px solid var(--border);
+    color:var(--pink-muted); font-family:var(--font-mono); font-size:.7rem;
+    text-transform:uppercase; letter-spacing:.1em; cursor:pointer; text-align:center;
+  }
+  .tab.on { background:rgba(255,20,147,.15); border-color:var(--pink); color:var(--pink); }
 
-    html,body {
-      font-family: 'Space Grotesk', system-ui, sans-serif;
-      background: #000;
-      color: var(--text);
-      min-height: 100vh;
-    }
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-      overflow-x: hidden;
-      position: relative;
-      background:
-        radial-gradient(circle at 50% 16%, rgba(255,0,140,.18), transparent 32%),
-        radial-gradient(circle at 50% 70%, rgba(133,0,255,.08), transparent 35%),
-        #000;
-    }
+  .alloc-stage { position:relative; text-align:center; padding:1rem 0 .5rem; }
+  .alloc-stage .stamp-pos { position:absolute; top:-6px; right:4px; }
+  .alloc-stage .egg-1 { position:absolute; top:10px; left:8px; font-size:22px; transform:rotate(-18deg); }
+  .alloc-stage .egg-2 { position:absolute; bottom:28px; right:-4px; font-size:20px; transform:rotate(24deg); }
+  .alloc-stage .big {
+    font-family:var(--font-display); font-weight:700; font-size:2.4rem;
+    color:var(--gold); letter-spacing:-.02em; line-height:1;
+    text-shadow:3px 3px 0 #ff1493, 6px 6px 0 #a855f7;
+    margin:.4rem 0 .2rem;
+  }
+  .alloc-stage .big .unit { font-size:1rem; color:var(--pink-muted); font-family:var(--font-body); font-weight:500; text-shadow:none; margin-left:.2em; }
 
-    /* Stars background */
-    #stars {
-      position:fixed; inset:0; z-index:0; pointer-events:none;
-      background:
-        radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,.95), transparent 60%),
-        radial-gradient(2px 2px at 120px 90px, rgba(255,255,255,.85), transparent 60%),
-        radial-gradient(1.5px 1.5px at 200px 40px, rgba(255,255,255,.9), transparent 60%),
-        radial-gradient(2px 2px at 300px 130px, rgba(255,255,255,.8), transparent 60%),
-        radial-gradient(1.5px 1.5px at 420px 60px, rgba(255,255,255,.9), transparent 60%),
-        radial-gradient(2px 2px at 520px 150px, rgba(255,255,255,.8), transparent 60%),
-        radial-gradient(1.5px 1.5px at 680px 70px, rgba(255,255,255,.95), transparent 60%),
-        radial-gradient(2px 2px at 820px 40px, rgba(255,255,255,.85), transparent 60%),
-        radial-gradient(2px 2px at 960px 120px, rgba(255,255,255,.8), transparent 60%);
-      background-size:1000px 220px;
-      animation:starMove 28s linear infinite;
-      opacity:.6;
-    }
-    #stars::before {
-      content:""; position:absolute; inset:0;
-      background:
-        radial-gradient(2px 2px at 80px 60px, rgba(255,255,255,.85), transparent 60%),
-        radial-gradient(1.5px 1.5px at 240px 150px, rgba(255,255,255,.95), transparent 60%),
-        radial-gradient(2px 2px at 380px 90px, rgba(255,255,255,.8), transparent 60%),
-        radial-gradient(1.5px 1.5px at 560px 40px, rgba(255,255,255,.9), transparent 60%),
-        radial-gradient(2px 2px at 740px 140px, rgba(255,255,255,.85), transparent 60%);
-      background-size:1000px 220px; opacity:.45;
-      animation:starMove 42s linear infinite reverse;
-    }
-    @keyframes starMove { from{transform:translateY(0)} to{transform:translateY(220px)} }
+  a { color:inherit; }
+</style>
 
-    .container { position:relative; z-index:1; width:100%; max-width:480px; }
-
-    /* Nav tabs */
-    .nav-tabs {
-      display:flex; justify-content:center; gap:.5rem; margin-bottom:1.25rem;
-    }
-    .nav-tab {
-      padding:.5rem 1.2rem; border-radius:999px;
-      border:2px solid var(--pink); background:rgba(20,0,12,.6);
-      color:var(--pink); font-family:inherit; font-size:.78rem; font-weight:700;
-      cursor:pointer; transition:all .2s; text-decoration:none;
-      display:inline-flex; align-items:center; gap:.4rem;
-      box-shadow:0 0 10px rgba(255,105,180,.15);
-      backdrop-filter:blur(5px);
-    }
-    .nav-tab:hover { transform:translateY(-1px); box-shadow:0 0 16px rgba(255,105,180,.35); background:rgba(255,20,147,.12); }
-    .nav-tab.active { background:rgba(255,20,147,.18); color:var(--gold); border-color:var(--gold); box-shadow:0 0 14px rgba(255,215,0,.2); }
-
-    /* Header */
-    .header { text-align:center; margin-bottom:1.75rem; }
-    .logo-mark {
-      width:56px; height:56px; border-radius:16px; margin:0 auto 1rem;
-      background:linear-gradient(135deg,var(--pink),var(--pink2));
-      display:flex; align-items:center; justify-content:center;
-      font-size:1.6rem;
-      box-shadow:0 0 30px rgba(255,20,147,.5), 0 0 60px rgba(255,20,147,.2);
-      animation:logoFloat 4s ease-in-out infinite;
-    }
-    @keyframes logoFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
-
-    .header h1 {
-      font-size:1.6rem; font-weight:700; color:#ff7ac3;
-      letter-spacing:4px;
-      text-shadow:0 0 10px rgba(255,105,180,.85), 0 0 24px rgba(255,20,147,.6);
-    }
-    .tagline {
-      font-size:1rem; font-weight:700; margin-top:.5rem;
-      color:var(--gold);
-      text-shadow:0 0 12px rgba(255,215,0,.8), 0 0 28px rgba(255,166,0,.5);
-      animation:pulseGlow 2.4s ease-in-out infinite;
-    }
-    @keyframes pulseGlow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.1)} }
-
-    .header .sub { font-size:.72rem; color:var(--muted); margin-top:.4rem; text-shadow:0 0 6px rgba(255,20,147,.3); }
-
-    /* Network pills */
-    .networks { display:flex; justify-content:center; gap:.4rem; margin-top:.65rem; }
-    .net-pill {
-      display:inline-flex; align-items:center; gap:.3rem;
-      padding:.25rem .6rem; border-radius:20px;
-      font-size:.6rem; font-weight:600; letter-spacing:.03em;
-    }
-    .net-pill.op  { background:rgba(255,20,147,.1); border:1px solid rgba(255,105,180,.3); color:var(--pink); }
-    .net-pill.x1  { background:rgba(255,215,0,.06); border:1px solid rgba(255,215,0,.25); color:var(--gold); }
-    .net-dot { width:4px; height:4px; border-radius:50%; background:currentColor; }
-
-    /* Epoch bar */
-    .epoch-bar {
-      display:flex; align-items:center; justify-content:center; gap:.5rem;
-      background:rgba(20,0,12,.5); border:1px solid rgba(255,105,180,.25);
-      border-radius:10px; padding:.4rem .9rem; margin-bottom:1.25rem;
-      font-size:.7rem; color:var(--muted);
-      font-family:'JetBrains Mono', monospace;
-      box-shadow:0 0 12px rgba(255,20,147,.08);
-    }
-    .epoch-bar .label { color:var(--muted); }
-    .epoch-bar .val   { color:var(--gold); font-weight:600; text-shadow:0 0 8px rgba(255,215,0,.4); }
-
-    /* Card */
-    .card {
-      background: linear-gradient(180deg, rgba(48,0,30,.45), rgba(18,0,12,.58));
-      border:1px solid rgba(255,105,180,.25);
-      border-radius:18px; padding:1.75rem;
-      backdrop-filter:blur(8px);
-      box-shadow:0 0 18px rgba(255,20,147,.1), inset 0 0 16px rgba(255,255,255,.02);
-      margin-bottom:.75rem;
-    }
-
-    .section-label {
-      font-size:.65rem; font-weight:600; letter-spacing:.1em;
-      text-transform:uppercase; color:var(--gold); margin-bottom:.6rem;
-      text-shadow:0 0 8px rgba(255,215,0,.2);
-    }
-
-    /* Wallet row */
-    .wallet-row {
-      display:flex; align-items:center; gap:.7rem;
-      padding:.7rem .85rem;
-      border:1px solid rgba(255,105,180,.2);
-      border-radius:12px; background:rgba(20,0,12,.5);
-      margin-bottom:.85rem;
-    }
-    .wallet-dot {
-      width:32px; height:32px; border-radius:10px;
-      display:flex; align-items:center; justify-content:center;
-      font-size:.85rem; flex-shrink:0;
-    }
-    .wallet-dot.evm { background:linear-gradient(135deg,rgba(255,20,147,.25),rgba(255,105,180,.25)); }
-    .wallet-dot.svm { background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(255,166,0,.2)); }
-    .wallet-info { flex:1; min-width:0; }
-    .wallet-info .label { font-size:.65rem; color:var(--muted); font-weight:500; }
-    .wallet-info .addr  {
-      font-size:.82rem; font-weight:600; color:#fff;
-      font-family:'JetBrains Mono', monospace;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-    .wallet-info .addr.empty { color:var(--muted); font-weight:400; font-family:'Space Grotesk', sans-serif; }
-
-    .connect-btn {
-      padding:.4rem .75rem; border-radius:8px; border:1px solid rgba(255,105,180,.3);
-      font-family:inherit; font-size:.72rem; font-weight:600;
-      cursor:pointer; transition:all .2s; flex-shrink:0;
-      background:rgba(255,20,147,.1); color:var(--pink);
-    }
-    .connect-btn:hover:not(:disabled) {
-      background:rgba(255,20,147,.2); border-color:rgba(255,105,180,.5);
-      transform:translateY(-1px); box-shadow:0 0 12px rgba(255,105,180,.2);
-    }
-    .connect-btn:disabled { opacity:.35; cursor:not-allowed; }
-    .connect-btn.done { background:rgba(74,222,128,.12); border-color:rgba(74,222,128,.3); color:var(--green); }
-
-    /* Wallet selector */
-    .wallet-selector {
-      display:grid; grid-template-columns:1fr 1fr; gap:.5rem;
-      margin-bottom:.7rem;
-    }
-    .wallet-opt {
-      display:flex; align-items:center; gap:.5rem;
-      padding:.55rem .75rem;
-      border:1px solid rgba(255,105,180,.2); border-radius:10px;
-      background:rgba(20,0,12,.5);
-      font-family:inherit; font-size:.75rem; font-weight:600;
-      color:var(--soft); cursor:pointer; transition:all .2s;
-    }
-    .wallet-opt:hover {
-      background:rgba(255,20,147,.12);
-      border-color:rgba(255,105,180,.4);
-      color:#fff; box-shadow:0 0 10px rgba(255,105,180,.15);
-    }
-    .wallet-opt:disabled { opacity:.35; cursor:not-allowed; }
-    .wallet-opt .wicon { font-size:1rem; }
-    .wallet-opt small  { font-size:.58rem; color:var(--muted); display:block; font-weight:400; }
-
-    /* Divider */
-    .divider { height:1px; background:rgba(255,105,180,.15); margin:1.2rem 0; }
-
-    /* Input */
-    .input-group { margin-bottom:1rem; }
-    .input-group label {
-      display:block; font-size:.65rem; font-weight:600;
-      color:var(--muted); margin-bottom:.4rem;
-      letter-spacing:.08em; text-transform:uppercase;
-    }
-    .input-group input {
-      width:100%; padding:.75rem .9rem;
-      border:1px solid rgba(255,105,180,.25); border-radius:10px;
-      background:rgba(20,0,12,.6); color:#fff2fb;
-      font-family:'JetBrains Mono', monospace; font-size:.9rem; font-weight:400;
-      outline:none; transition:border-color .2s, box-shadow .2s;
-    }
-    .input-group input::placeholder { color:#8d5a70; }
-    .input-group input:focus {
-      border-color:rgba(255,20,147,.5);
-      box-shadow:0 0 0 3px rgba(255,20,147,.12), 0 0 12px rgba(255,105,180,.15);
-    }
-
-    /* Buttons */
-    .btn-row { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
-    .btn {
-      width:100%; padding:.75rem .9rem;
-      border-radius:10px; border:none;
-      font-family:inherit; font-size:.82rem; font-weight:700;
-      cursor:pointer; transition:all .15s;
-    }
-    .btn:disabled { opacity:.25; cursor:not-allowed; }
-
-    .btn-approve {
-      background:rgba(255,105,180,.08);
-      border:2px solid rgba(255,105,180,.3);
-      color:var(--pink);
-    }
-    .btn-approve:not(:disabled):hover { background:rgba(255,105,180,.15); transform:translateY(-1px); box-shadow:0 0 14px rgba(255,105,180,.2); }
-
-    .btn-burn {
-      background:linear-gradient(135deg,rgba(255,20,147,.2),rgba(255,105,180,.2));
-      border:2px solid var(--pink);
-      color:var(--gold);
-      box-shadow:0 0 10px rgba(255,20,147,.2);
-    }
-    .btn-burn:not(:disabled):hover {
-      background:linear-gradient(135deg,rgba(255,20,147,.3),rgba(255,105,180,.3));
-      transform:translateY(-1px); box-shadow:0 0 18px rgba(255,20,147,.35);
-    }
-
-    .btn-link {
-      background:linear-gradient(135deg,var(--pink2),var(--pink));
-      color:#fff;
-      box-shadow:0 4px 20px rgba(255,20,147,.25), 0 0 12px rgba(255,105,180,.15);
-    }
-    .btn-link:not(:disabled):hover { transform:translateY(-1px); box-shadow:0 4px 24px rgba(255,20,147,.4); }
-
-    .btn-ghost {
-      background:transparent;
-      border:1px solid rgba(255,105,180,.2);
-      color:var(--muted);
-    }
-    .btn-ghost:not(:disabled):hover { background:rgba(255,20,147,.08); color:var(--pink); }
-
-    /* Fee badge */
-    .fee-badge {
-      display:inline-flex; align-items:center; gap:.35rem;
-      padding:.3rem .7rem; border-radius:20px;
-      background:rgba(255,215,0,.08); border:1px solid rgba(255,215,0,.25);
-      font-size:.67rem; font-weight:600; color:var(--gold); margin-bottom:.85rem;
-    }
-
-    /* Status text */
-    .status-text {
-      text-align:center; font-size:.72rem; color:var(--muted);
-      margin-top:.75rem; min-height:1rem; word-break:break-all;
-      transition:color .3s;
-    }
-    .status-text.ok  { color:var(--green); text-shadow:0 0 8px rgba(74,222,128,.3); }
-    .status-text.err { color:var(--red); text-shadow:0 0 8px rgba(255,68,102,.3); }
-
-    /* Burn history */
-    .burn-history { margin-top:.85rem; }
-    .burn-entry {
-      display:flex; justify-content:space-between; align-items:center;
-      padding:.45rem .7rem;
-      border:1px solid rgba(255,105,180,.15); border-radius:8px;
-      background:rgba(20,0,12,.4); margin-bottom:.3rem;
-      font-size:.7rem;
-    }
-    .burn-entry .burn-amt {
-      font-weight:600; color:var(--gold);
-      font-family:'JetBrains Mono', monospace;
-      text-shadow:0 0 6px rgba(255,215,0,.3);
-    }
-    .burn-entry .burn-time { color:var(--muted); font-family:'JetBrains Mono', monospace; font-size:.65rem; }
-
-    /* Stats bar */
-    .stats-bar {
-      display:grid; grid-template-columns:1fr 1fr 1fr; gap:.4rem;
-      margin-top:.85rem;
-    }
-    .stat-cell {
-      background:rgba(20,0,12,.5);
-      border:1px solid rgba(255,105,180,.2);
-      border-radius:8px; padding:.5rem; text-align:center;
-    }
-    .stat-cell .k { font-size:.55rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
-    .stat-cell .v {
-      font-size:.8rem; font-weight:700; color:var(--gold); margin-top:.1rem;
-      font-family:'JetBrains Mono', monospace;
-      text-shadow:0 0 6px rgba(255,215,0,.3);
-    }
-
-    /* Success panel */
-    .success-panel { text-align:center; display:none; }
-    .success-panel.show { display:block; }
-    .success-icon {
-      font-size:2.5rem; margin-bottom:.75rem;
-      animation:pop .5s cubic-bezier(.36,.07,.19,.97) both;
-    }
-    @keyframes pop {
-      0%   { transform:scale(0); }
-      80%  { transform:scale(1.15); }
-      100% { transform:scale(1); }
-    }
-    .success-panel h2 { font-size:1.2rem; font-weight:700; color:var(--gold); margin-bottom:.4rem; text-shadow:0 0 10px rgba(255,215,0,.4); }
-    .success-panel p  { font-size:.78rem; color:var(--muted); line-height:1.5; }
-
-    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:.4rem; margin-top:.85rem; }
-    .info-cell {
-      background:rgba(20,0,12,.5);
-      border:1px solid rgba(255,105,180,.2);
-      border-radius:10px; padding:.6rem;
-    }
-    .info-cell .k { font-size:.58rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
-    .info-cell .v {
-      font-size:.78rem; font-weight:600; color:#fff; margin-top:.15rem;
-      word-break:break-all; font-family:'JetBrains Mono', monospace;
-    }
-
-    /* Footer */
-    .footer {
-      text-align:center; margin-top:1rem; font-size:.62rem; color:var(--muted);
-    }
-    .footer a { color:var(--pink); text-decoration:none; transition:all .2s; }
-    .footer a:hover { color:var(--gold); text-shadow:0 0 8px rgba(255,215,0,.3); }
-  </style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
-  <div id="stars"></div>
 
-  <div class="container">
+<div id="root"></div>
 
-    <!-- NAV TABS -->
-    <div class="nav-tabs">
-      <span class="nav-tab active">🔥 BURNER</span>
-      <a class="nav-tab" href="https://analtena.com/game" target="_blank" rel="noopener">🎮 PLAY GAME</a>
+<script type="text/babel">
+{% raw %}
+const { useState, useEffect } = React;
+
+// ---------- Primitives ----------
+function Card({ children, style = {} }) {
+  return (
+    <div style={{
+      background:'rgba(35,0,22,.40)', border:'1px solid rgba(255,105,180,.2)',
+      borderRadius:'1.25rem', padding:'1.75rem 1.5rem',
+      backdropFilter:'blur(10px)', boxShadow:'0 0 40px rgba(255,20,147,.08)', ...style,
+    }}>{children}</div>
+  );
+}
+
+function Button({ variant='pink', children, disabled, done, onClick, style={} }) {
+  const base = {
+    width:'100%', padding:'.85rem 1rem', border:'none', borderRadius:'.7rem',
+    fontFamily:"'Space Grotesk',system-ui,sans-serif", fontWeight:700, fontSize:'.95rem',
+    cursor: disabled ? 'not-allowed' : 'pointer', transition:'all .2s',
+    marginBottom:'.5rem', display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+  };
+  const variants = {
+    pink:{ background:'linear-gradient(135deg,#ff5db3,#ff1493)', color:'#fff', boxShadow:'0 4px 20px rgba(255,20,147,.35)' },
+    gold:{ background:'linear-gradient(135deg,#ffd84d,#ff9500)', color:'#220010', boxShadow:'0 4px 20px rgba(255,216,77,.3)' },
+  };
+  const doneStyle = { background:'#4ade80', color:'#063', boxShadow:'none' };
+  const [hover, setHover] = useState(false);
+  const lift = hover && !disabled && !done ? { transform:'translateY(-1px)', boxShadow:'0 6px 25px rgba(255,20,147,.5)' } : {};
+  return (
+    <button onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
+      onClick={onClick} disabled={disabled}
+      style={{ ...base, ...variants[variant], ...(done?doneStyle:{}), ...(disabled?{opacity:.4}:{}), ...lift, ...style }}
+    >{children}</button>
+  );
+}
+
+function Input({ value, onChange, placeholder, type='text' }) {
+  const [focus, setFocus] = useState(false);
+  return (
+    <input type={type} value={value} onChange={e=>onChange?.(e.target.value)} placeholder={placeholder}
+      onFocus={()=>setFocus(true)} onBlur={()=>setFocus(false)}
+      style={{
+        width:'100%', padding:'.8rem 1rem',
+        background:'rgba(0,0,0,.4)',
+        border:`1px solid ${focus ? '#ff5db3' : 'rgba(255,105,180,.2)'}`,
+        borderRadius:'.7rem', color:'#ffc1dc',
+        fontFamily:'inherit', fontSize:'1rem', marginBottom:'.6rem', outline:'none',
+        boxSizing:'border-box',
+      }}/>
+  );
+}
+
+function SectionLabel({ children }) {
+  return <p style={{
+    textTransform:'uppercase', fontSize:'.7rem', letterSpacing:'.15em',
+    color:'#ff5db3', fontWeight:600, marginBottom:'.5rem', marginTop:0,
+  }}>{children}</p>;
+}
+
+function Divider() {
+  return <div style={{ height:1, background:'rgba(255,105,180,.2)', margin:'1.2rem 0' }}/>;
+}
+
+function AddressRow({ tag, address }) {
+  const empty = !address;
+  return (
+    <div style={{
+      display:'flex', alignItems:'center', justifyContent:'space-between',
+      padding:'.7rem .9rem', background:'rgba(0,0,0,.35)',
+      border:'1px solid rgba(255,105,180,.2)', borderRadius:'.7rem',
+      marginBottom:'.6rem', fontFamily:"'JetBrains Mono',monospace", fontSize:'.82rem',
+    }}>
+      <span style={{ fontFamily:"'Space Grotesk',system-ui,sans-serif", color:'#ffc1dc', fontWeight:600, fontSize:'.78rem', letterSpacing:'.05em' }}>{tag}</span>
+      <span style={{ color: empty ? '#c57aa8' : '#ffd84d' }}>{empty ? 'not connected' : address}</span>
     </div>
+  );
+}
 
-    <!-- HEADER -->
-    <div class="header">
-      <div class="logo-mark">🔥</div>
-      <h1>opXEN Burner</h1>
-      <div class="tagline">Burn opXEN get ANALten</div>
-      <div class="sub">24h auction system</div>
-      <div class="networks">
-        <span class="net-pill op"><span class="net-dot"></span>Optimism</span>
-        <span class="net-pill x1"><span class="net-dot"></span>X1</span>
+function StatTile({ label, value, unit }) {
+  return (
+    <div style={{
+      background:'rgba(0,0,0,.35)', border:'1px solid rgba(255,105,180,.2)',
+      borderRadius:'.7rem', padding:'.7rem .9rem', textAlign:'center',
+    }}>
+      <div style={{ fontSize:'.65rem', color:'#c57aa8', textTransform:'uppercase', letterSpacing:'.1em' }}>{label}</div>
+      <div style={{ fontSize:'1.1rem', color:'#ffd84d', fontWeight:700, fontFamily:"'JetBrains Mono',monospace", marginTop:'.2rem' }}>
+        {value}{unit && <span style={{ fontSize:'.7rem', color:'#c57aa8', marginLeft:3, fontFamily:"'Space Grotesk',system-ui,sans-serif", fontWeight:400 }}> {unit}</span>}
       </div>
     </div>
+  );
+}
 
-    <!-- EPOCH BAR -->
-    <div class="epoch-bar">
-      <span class="label">Epoch</span>
-      <span class="val" id="epochDate">—</span>
-      <span class="label">|</span>
-      <span class="label">Ends in</span>
-      <span class="val" id="epochTimer">—</span>
+function BurnEntry({ amount, txHash }) {
+  return (
+    <div style={{
+      display:'flex', justifyContent:'space-between', alignItems:'center',
+      padding:'.5rem .7rem', background:'rgba(0,0,0,.3)',
+      borderRadius:'.5rem', marginBottom:'.35rem', fontSize:'.78rem',
+    }}>
+      <span style={{ color:'#ffd84d', fontFamily:"'JetBrains Mono',monospace" }}>{amount.toLocaleString('en')} opXEN</span>
+      <a href={txHash ? `https://optimistic.etherscan.io/tx/${txHash}` : '#'}
+         target="_blank" rel="noopener"
+         style={{ color:'#ff5db3', textDecoration:'none', fontFamily:"'JetBrains Mono',monospace" }}>tx ↗</a>
     </div>
+  );
+}
 
-    <!-- ══ BURN CARD ══ -->
-    <div class="card" id="burnCard">
+function StatusText({ children, kind }) {
+  const colors = { ok:'#4ade80', err:'#ff4466' };
+  return <p style={{
+    marginTop:'.6rem', fontSize:'.82rem',
+    color: colors[kind] || '#c57aa8', wordBreak:'break-all', minHeight:'1.2em',
+  }}>{children}</p>;
+}
 
-      <p class="section-label">EVM Wallet (Optimism)</p>
-
-      <div class="wallet-row">
-        <div class="wallet-dot evm">⬡</div>
-        <div class="wallet-info">
-          <div class="label">EVM Wallet · Optimism Mainnet</div>
-          <div class="addr empty" id="evmAddrDisplay">Not connected</div>
-        </div>
-        <button class="connect-btn" id="connectEvmBtn">Connect</button>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="input-group">
-        <label for="amount">Amount of opXEN to burn</label>
-        <input type="number" id="amount" placeholder="e.g. 3000000" min="0" step="any" />
-      </div>
-
-      <div class="btn-row">
-        <button class="btn btn-approve" id="approveBtn" disabled>Approve</button>
-        <button class="btn btn-burn"    id="burnBtn"    disabled>Burn 🔥</button>
-      </div>
-
-      <div class="status-text" id="evmStatus">Connect wallet to continue</div>
-
-      <!-- Stats after burn -->
-      <div class="stats-bar" id="burnStats" style="display:none">
-        <div class="stat-cell">
-          <div class="k">Your burns</div>
-          <div class="v" id="statMyTotal">0</div>
-        </div>
-        <div class="stat-cell">
-          <div class="k">Your share</div>
-          <div class="v" id="statMyShare">0%</div>
-        </div>
-        <div class="stat-cell">
-          <div class="k">Participants</div>
-          <div class="v" id="statParticipants">0</div>
-        </div>
-      </div>
-
-      <!-- Burn history -->
-      <div class="burn-history" id="burnHistory"></div>
-
-      <div class="divider"></div>
-
-      <button class="btn btn-link" id="goLinkBtn" disabled style="margin-top:.3rem">
-        Link wallets (step 2) →
-      </button>
-      <p style="font-size:.65rem; color:var(--muted); text-align:center; margin-top:.35rem;">
-        You can burn multiple times — proceed to step 2 when done
-      </p>
+function Footer() {
+  return (
+    <div style={{ marginTop:'1.25rem', textAlign:'center', fontSize:'.75rem', color:'#c57aa8' }}>
+      <a href="https://analtena.com/" target="_blank" rel="noopener" style={{ color:'#ff5db3', textDecoration:'none', fontWeight:600 }}>analtena.com</a>
+      {' · '}
+      <a href="https://optimistic.etherscan.io/address/0xdDd1A839b790Aa4A12C665417Ff37F2Ab39F4FE2" target="_blank" rel="noopener" style={{ color:'#ff5db3', textDecoration:'none' }}>Burner contract</a>
+      {' · '}
+      <a href="/burners" style={{ color:'#ff5db3', textDecoration:'none' }}>Other burners</a>
     </div>
+  );
+}
 
-    <!-- ══ LINK CARD ══ -->
-    <div class="card" id="linkCard" style="display:none">
+function StarField() {
+  const style = {
+    position:'fixed', inset:0, zIndex:0, pointerEvents:'none',
+    background:[
+      'radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,.95), transparent 60%)',
+      'radial-gradient(2px 2px at 120px 90px, rgba(255,255,255,.85), transparent 60%)',
+      'radial-gradient(1.5px 1.5px at 200px 40px, rgba(255,255,255,.9), transparent 60%)',
+      'radial-gradient(2px 2px at 300px 130px, rgba(255,255,255,.8), transparent 60%)',
+      'radial-gradient(1.5px 1.5px at 420px 60px, rgba(255,255,255,.9), transparent 60%)',
+      'radial-gradient(2px 2px at 520px 150px, rgba(255,255,255,.8), transparent 60%)',
+      'radial-gradient(1.5px 1.5px at 680px 70px, rgba(255,255,255,.95), transparent 60%)',
+      'radial-gradient(2px 2px at 820px 40px, rgba(255,255,255,.85), transparent 60%)',
+      'radial-gradient(2px 2px at 960px 120px, rgba(255,255,255,.8), transparent 60%)',
+    ].join(','),
+    backgroundSize:'1000px 220px', animation:'starMove 28s linear infinite', opacity:.6,
+  };
+  return <div style={style}/>;
+}
 
-      <p class="section-label">Link SVM Wallet (X1)</p>
+// ---------- Kitsch ----------
+function ComicStamp({ children, rotate=-6 }) {
+  return <div style={{
+    display:'inline-block', padding:'6px 14px',
+    border:'2px solid #ff4466', color:'#ff4466',
+    fontWeight:800, fontSize:'.85rem', letterSpacing:'.15em',
+    textTransform:'uppercase', transform:`rotate(${rotate}deg)`,
+    borderRadius:4, fontFamily:"'Space Grotesk',system-ui,sans-serif",
+  }}>{children}</div>;
+}
 
-      <button class="btn btn-ghost" id="backToBurnBtn" style="margin-bottom:.85rem; font-size:.75rem">
-        ← Back to burning
-      </button>
+function Sticker({ children, bg='#ff5db3', color='#220010' }) {
+  return <span style={{
+    display:'inline-flex', alignItems:'center', gap:4,
+    background:bg, color, border:'2px solid #220010',
+    padding:'4px 10px', borderRadius:999,
+    fontSize:'.72rem', fontWeight:700, textTransform:'uppercase',
+    boxShadow:'2px 2px 0 #220010', fontFamily:"'Space Grotesk',system-ui,sans-serif",
+  }}>{children}</span>;
+}
 
-      <!-- Wallet selector -->
-      <div class="wallet-selector">
-        <button class="wallet-opt" id="btnBackpack">
-          <span class="wicon">🎒</span>
-          <div>
-            <span>Backpack</span>
-            <small>backpack.app</small>
+function HazardTape({ children }) {
+  return <div style={{
+    padding:'6px 10px',
+    background:'repeating-linear-gradient(45deg, #ffd84d 0 14px, #220010 14px 28px)',
+    color:'#fff', fontFamily:"'JetBrains Mono',monospace", fontSize:'.7rem',
+    fontWeight:700, textTransform:'uppercase', letterSpacing:'.15em',
+    textShadow:'1px 1px 2px #000', borderRadius:4, textAlign:'center',
+  }}>{children}</div>;
+}
+
+function OwlBubble({ children }) {
+  return (
+    <div style={{ display:'flex', alignItems:'flex-end', gap:10, marginTop:'.8rem' }}>
+      <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden', border:'2px solid #220010', flexShrink:0 }}>
+        <img src="/static/analtena-logo-main.png" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+      </div>
+      <div style={{
+        background:'#fff', color:'#220010', border:'2px solid #220010',
+        borderRadius:12, padding:'6px 10px', fontWeight:700, fontSize:'.8rem',
+        fontFamily:"'Space Grotesk',system-ui,sans-serif",
+        boxShadow:'3px 3px 0 #220010',
+      }}>{children}</div>
+    </div>
+  );
+}
+
+// ---------- App ----------
+function Steps({ step }) {
+  const s = (n, label) => {
+    const cls = step > n ? 'done' : step === n ? 'active' : '';
+    return <div className={'step-dot ' + cls} title={label}>{step > n ? '✓' : n}</div>;
+  };
+  return (
+    <div className="steps">
+      {s(1,'Connect')}<div className={'step-line ' + (step>1?'done':'')}/>
+      {s(2,'Burn')}<div className={'step-line ' + (step>2?'done':'')}/>
+      {s(3,'Link')}<div className={'step-line ' + (step>3?'done':'')}/>
+      {s(4,'Allocated')}
+    </div>
+  );
+}
+
+function App() {
+  const [evm, setEvm] = useState(null);
+  const [svm, setSvm] = useState(null);
+  const [amount, setAmount] = useState('');
+  const [burns, setBurns] = useState([]);
+  const [approved, setApproved] = useState(false);
+  const [status, setStatus] = useState({ text:'', kind:null });
+  const [xntPaid, setXntPaid] = useState(false);
+  const [alloc, setAlloc] = useState(null);
+  const [tab, setTab] = useState('burn');
+
+  const step = !evm ? 1 : burns.length === 0 ? 2 : !svm || !xntPaid ? 3 : 4;
+
+  const connectEvm = () => {
+    setStatus({ text:'Connecting to MetaMask...', kind:null });
+    setTimeout(() => {
+      setEvm('0xA1b2C3d4E5f6' + Math.floor(Math.random()*9999).toString(16).padStart(4,'0') + '...c8F4');
+      setStatus({ text:'Connected', kind:'ok' });
+    }, 500);
+  };
+
+  const approve = () => {
+    if (!amount || Number(amount) <= 0) { alert('Enter opXEN amount.'); return; }
+    setStatus({ text:'Waiting for Approve...', kind:null });
+    setTimeout(() => {
+      setApproved(true);
+      setStatus({ text:'Approve OK — you can now burn.', kind:'ok' });
+    }, 600);
+  };
+
+  const burn = () => {
+    if (!approved) { alert('Click Approve first.'); return; }
+    if (!amount || Number(amount) <= 0) return;
+    setStatus({ text:'Burning in progress...', kind:null });
+    setTimeout(() => {
+      const tx = '0x' + Math.floor(Math.random()*1e16).toString(16).padStart(10,'0');
+      const n = Number(amount);
+      setBurns(b => [{ amount:n, tx }, ...b].slice(0, 20));
+      setStatus({ text:`✓ Burned ${n.toLocaleString('en')} opXEN — tx ${tx.slice(0,10)}...`, kind:'ok' });
+      setAmount(''); setApproved(false);
+      setTimeout(() => setTab('link'), 400);
+    }, 800);
+  };
+
+  const connectSvm = () => {
+    setTimeout(() => setSvm('F3eBDrrSmEnjNAHex7i1CXB9Mr2d1n192iNH2sPM8X98'), 400);
+  };
+
+  const payXnt = () => {
+    if (!svm) return;
+    setStatus({ text:'Paying 0.1 XNT on X1...', kind:null });
+    setTimeout(() => {
+      setXntPaid(true);
+      const totalBurned = burns.reduce((s,b) => s + b.amount, 0);
+      const anal = (totalBurned / 1_000_000) * 2;
+      setAlloc({ anal: anal.toFixed(2), epoch: new Date().toISOString().slice(0,10) });
+      setStatus({ text:'✓ Wallet linked. Airdrop allocation live.', kind:'ok' });
+      setTab('alloc');
+    }, 700);
+  };
+
+  const totalBurned = burns.reduce((s,b) => s + b.amount, 0);
+  const globalBurned = 89_247_351 + totalBurned;
+
+  return (
+    <>
+      <StarField/>
+      <div className="container">
+        <Card>
+          <div style={{display:'flex', justifyContent:'center', marginBottom:'.8rem'}}>
+            <img src="/static/analtena-logo-main.png" alt="ANALTENA"
+                 style={{width:96, height:96, objectFit:'contain',
+                         filter:'drop-shadow(0 0 16px rgba(255,20,147,.35))'}}/>
           </div>
-        </button>
-        <button class="wallet-opt" id="btnX1">
-          <span class="wicon">⚡</span>
-          <div>
-            <span>X1 Wallet</span>
-            <small>fork Backpack</small>
-          </div>
-        </button>
+          <h1 className="hero">🔥 Burn XEN for ANALTEN</h1>
+          <p className="subtitle">
+            Burn opXEN on Optimism · earn ANALTEN on X1 ·{' '}
+            <a href="https://analtena.com/" target="_blank" rel="noopener" style={{color:'#ff5db3',textDecoration:'none',fontWeight:600}}>analtena.com</a>
+          </p>
+
+          <Steps step={step}/>
+
+          <SectionLabel>Your wallets</SectionLabel>
+          <AddressRow tag="EVM" address={evm}/>
+          <AddressRow tag="SVM" address={svm}/>
+
+          {!evm && <Button variant="pink" onClick={connectEvm}>Connect EVM Wallet</Button>}
+          {evm && !svm && burns.length > 0 && (
+            <Button variant="gold" onClick={connectSvm}>Connect Backpack / X1</Button>
+          )}
+          {evm && (
+            <div className="tabs">
+              <div className={'tab ' + (tab==='burn'?'on':'')} onClick={()=>setTab('burn')}>Burn</div>
+              <div className={'tab ' + (tab==='link'?'on':'')} onClick={()=>setTab('link')}>Link SVM</div>
+              <div className={'tab ' + (tab==='alloc'?'on':'')} onClick={()=>setTab('alloc')}>Allocation</div>
+            </div>
+          )}
+
+          {evm && tab === 'burn' && (
+            <>
+              <SectionLabel>Burn opXEN</SectionLabel>
+              <Input type="number" value={amount} onChange={setAmount} placeholder="Amount of opXEN"/>
+              <Button variant="gold" onClick={approve} disabled={!amount} done={approved}>
+                {approved ? '✓ Approved' : '1. Approve'}
+              </Button>
+              <Button variant="pink" onClick={burn} disabled={!approved}>2. Burn 🔥</Button>
+              <StatusText kind={status.kind}>{status.text}</StatusText>
+
+              {burns.length > 0 && (
+                <>
+                  <div className="stats-grid">
+                    <StatTile label="My total burned" value={totalBurned.toLocaleString('en')}/>
+                    <StatTile label="Global burned" value={globalBurned.toLocaleString('en')}/>
+                  </div>
+                  <Divider/>
+                  <SectionLabel>Your burns</SectionLabel>
+                  {burns.map((b,i) => <BurnEntry key={i} amount={b.amount} txHash={b.tx}/>)}
+                </>
+              )}
+            </>
+          )}
+
+          {evm && tab === 'link' && (
+            <>
+              <SectionLabel>Link SVM wallet</SectionLabel>
+              {!svm && (
+                <>
+                  <p style={{fontSize:'.82rem',color:'#c57aa8',margin:'0 0 .6rem'}}>
+                    Connect Backpack or X1 Wallet to receive ANALTEN airdrop on X1/Solana.
+                  </p>
+                  <Button variant="gold" onClick={connectSvm} disabled={burns.length===0}>Connect Backpack / X1</Button>
+                </>
+              )}
+              {svm && !xntPaid && (
+                <>
+                  <p style={{fontSize:'.82rem',color:'#c57aa8',margin:'.2rem 0 .8rem'}}>
+                    One-time 0.1 XNT fee to lock your wallet pair.
+                  </p>
+                  <Button variant="pink" onClick={payXnt}>Pay 0.1 XNT</Button>
+                </>
+              )}
+              {svm && xntPaid && <OwlBubble>done. weak burn tho, burn more 🍆</OwlBubble>}
+              <StatusText kind={status.kind}>{status.text}</StatusText>
+            </>
+          )}
+
+          {evm && tab === 'alloc' && (
+            <>
+              <SectionLabel>Your ANALTEN allocation</SectionLabel>
+              {!alloc ? (
+                <p style={{fontSize:'.82rem',color:'#c57aa8'}}>Finish Link step to see allocation.</p>
+              ) : (
+                <>
+                  <HazardTape>⚠ EARLY BIRD × 2 BONUS · TOP 100 WALLETS</HazardTape>
+                  <div className="alloc-stage">
+                    <span className="egg-1">🍆</span>
+                    <span className="egg-2">🍆</span>
+                    <div className="stamp-pos"><ComicStamp rotate={10}>Burned 🔥</ComicStamp></div>
+                    <div style={{fontSize:'.7rem',textTransform:'uppercase',letterSpacing:'.15em',color:'#c57aa8',fontFamily:"'JetBrains Mono',monospace"}}>ALLOCATED</div>
+                    <div className="big">{alloc.anal}<span className="unit">ANAL</span></div>
+                    <div style={{fontSize:'.75rem',color:'#c57aa8',fontFamily:"'JetBrains Mono',monospace"}}>Epoch {alloc.epoch}</div>
+                  </div>
+                  <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:'.8rem',flexWrap:'wrap'}}>
+                    <Sticker>🦉 ANALTENA APPROVED</Sticker>
+                    <Sticker bg="#c4ff00">EARLY × 2</Sticker>
+                  </div>
+                  <OwlBubble>Widzimy się na airdropie. teraz spal więcej 🍆🍆🍆</OwlBubble>
+                </>
+              )}
+            </>
+          )}
+
+          <Footer/>
+        </Card>
       </div>
+    </>
+  );
+}
 
-      <div class="wallet-row">
-        <div class="wallet-dot svm">◈</div>
-        <div class="wallet-info">
-          <div class="label" id="svmWalletLabel">Backpack / X1 Wallet · X1</div>
-          <div class="addr empty" id="svmAddrDisplay">Not connected</div>
-        </div>
-        <button class="connect-btn" id="connectSvmBtn" disabled>Connect</button>
-      </div>
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+{% endraw %}
+</script>
 
-      <div style="margin-top:.2rem">
-        <div class="fee-badge">
-          💜 Registration fee: <strong>0.1 XNT</strong>
-        </div>
-      </div>
-
-      <p style="font-size:.72rem; color:var(--muted); line-height:1.5; margin-bottom:1rem;">
-        Pay a one-time fee of 0.1 XNT on X1 — this creates a permanent
-        link between your EVM and SVM wallets.
-      </p>
-
-      <button class="btn btn-link" id="payAndLinkBtn" disabled>
-        Pay 0.1 XNT & Link Wallets
-      </button>
-
-      <div class="status-text" id="svmStatus">Select SVM wallet above</div>
-    </div>
-
-    <!-- ══ SUCCESS CARD ══ -->
-    <div class="card" id="successCard" style="display:none">
-      <div class="success-panel show">
-        <div class="success-icon">🎉</div>
-        <h2>Wallets Linked!</h2>
-        <p>Your wallets have been successfully linked.</p>
-
-        <div class="info-grid">
-          <div class="info-cell">
-            <div class="k">EVM</div>
-            <div class="v" id="s3evm">—</div>
-          </div>
-          <div class="info-cell">
-            <div class="k">SVM</div>
-            <div class="v" id="s3svm">—</div>
-          </div>
-          <div class="info-cell">
-            <div class="k">opXEN burned (epoch)</div>
-            <div class="v" id="s3burned">—</div>
-          </div>
-          <div class="info-cell">
-            <div class="k">Your share</div>
-            <div class="v" id="s3share">—</div>
-          </div>
-        </div>
-
-        <button class="btn btn-burn" id="burnMoreBtn" style="margin-top:1rem">
-          Burn more opXEN 🔥
-        </button>
-      </div>
-    </div>
-
-    <div class="footer">
-      opXEN Contract ·
-      <a href="https://optimistic.etherscan.io/address/0x83E96ff0944BD10aF19A054902225357DccE6d91" target="_blank" rel="noopener">Etherscan</a>
-      &nbsp;·&nbsp;
-      <a href="/api/leaderboard" target="_blank">Leaderboard</a>
-      &nbsp;·&nbsp;
-      <a href="/api/export/csv" target="_blank">Export CSV</a>
-      &nbsp;·&nbsp;
-      <a href="/api/db/burns" target="_blank">DB Burns</a>
-    </div>
-  </div>
-
-  <script>
-    // ─── CONFIG ───────────────────────────────────────────────────────────────
-    const XEN_ADDRESS    = "0xeB585163DEbB1E637c6D617de3bEF99347cd75c8";
-    const BURNER_ADDRESS = "0x83E96ff0944BD10aF19A054902225357DccE6d91";
-    const OPTIMISM_CHAIN = 10;
-
-    // XNT = native token on X1 (like SOL on Solana)
-    const XNT_TREASURY   = "F3eBDrrSmEnjNAHex7i1CXB9Mr2d1n192iNH2sPM8X98";
-    const XNT_DECIMALS   = 9;
-    const XNT_FEE_LAMPORTS = Math.floor(0.1 * 10 ** XNT_DECIMALS);
-
-    // ─── ABI ─────────────────────────────────────────────────────────────────
-    const xenAbi = [
-      {
-        inputs: [],
-        name: "decimals",
-        outputs: [{ internalType: "uint8", name: "", type: "uint8" }],
-        stateMutability: "view",
-        type: "function"
-      },
-      {
-        inputs: [
-          { internalType: "address", name: "spender", type: "address" },
-          { internalType: "uint256", name: "amount",  type: "uint256" }
-        ],
-        name: "approve",
-        outputs: [{ internalType: "bool", name: "", type: "bool" }],
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        inputs: [
-          { internalType: "address", name: "owner",   type: "address" },
-          { internalType: "address", name: "spender", type: "address" }
-        ],
-        name: "allowance",
-        outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-        stateMutability: "view",
-        type: "function"
-      }
-    ];
-
-    const burnerAbi = [
-      {
-        inputs: [{ internalType: "uint256", name: "amount", type: "uint256" }],
-        name: "burn",
-        outputs: [],
-        stateMutability: "nonpayable",
-        type: "function"
-      }
-    ];
-
-    // ─── STATE ────────────────────────────────────────────────────────────────
-    let web3, xenContract, burnerContract;
-    let evmAccount    = null;
-    let svmPublicKey  = null;
-    let svmProvider   = null;
-    let svmWalletName = '';
-    let tokenDecimals;
-    let burnHistory   = [];
-
-    // ─── HELPERS ──────────────────────────────────────────────────────────────
-    const $ = id => document.getElementById(id);
-
-    function setStatus(el, text, type) {
-      el.textContent = text;
-      el.className   = 'status-text' + (type ? ' ' + type : '');
-    }
-
-    function shortAddr(addr) {
-      if (!addr) return '—';
-      return addr.slice(0,6) + '...' + addr.slice(-4);
-    }
-
-    function toWei(rawAmount, decimals) {
-      const factor = BigInt(10) ** BigInt(decimals);
-      return (BigInt(Math.floor(Number(rawAmount))) * factor).toString();
-    }
-
-    function fmtNum(n) {
-      return Number(n).toLocaleString('en');
-    }
-
-    // ─── VIEWS ────────────────────────────────────────────────────────────────
-    function showView(view) {
-      $('burnCard').style.display    = (view === 'burn')    ? 'block' : 'none';
-      $('linkCard').style.display    = (view === 'link')    ? 'block' : 'none';
-      $('successCard').style.display = (view === 'success') ? 'block' : 'none';
-    }
-
-    // ─── EPOCH TIMER ──────────────────────────────────────────────────────────
-    function updateEpochTimer() {
-      const now  = new Date();
-      const utc  = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-      const next = new Date(utc.getTime() + 86400000);
-      const diff = next.getTime() - now.getTime();
-
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-
-      $('epochDate').textContent = utc.toISOString().slice(0,10);
-      $('epochTimer').textContent = `${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
-    }
-    setInterval(updateEpochTimer, 1000);
-    updateEpochTimer();
-
-    // ─── RENDER BURN HISTORY ──────────────────────────────────────────────────
-    function renderBurnHistory() {
-      const el = $('burnHistory');
-      if (burnHistory.length === 0) { el.innerHTML = ''; return; }
-      el.innerHTML = '<p class="section-label" style="margin-top:.5rem">Burn history (this epoch)</p>' +
-        burnHistory.map(b =>
-          `<div class="burn-entry">
-            <span class="burn-amt">${fmtNum(b.amount)} opXEN</span>
-            <span class="burn-time">${b.time}</span>
-          </div>`
-        ).join('');
-    }
-
-    // ─── EVM – CONNECT ────────────────────────────────────────────────────────
-    $('connectEvmBtn').onclick = async () => {
-      if (!window.ethereum) return alert("No EVM wallet detected. Please install an EVM-compatible wallet (MetaMask, Rabby, etc.).");
-      web3 = new Web3(window.ethereum);
-      try {
-        const accs    = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        evmAccount    = accs[0];
-        const chainId = await web3.eth.getChainId();
-        if (Number(chainId) !== OPTIMISM_CHAIN)
-          return alert(`Please switch to Optimism Mainnet (chainId=10). Current: ${chainId}`);
-
-        xenContract    = new web3.eth.Contract(xenAbi,    XEN_ADDRESS);
-        burnerContract = new web3.eth.Contract(burnerAbi, BURNER_ADDRESS);
-        const dec      = await xenContract.methods.decimals().call();
-        tokenDecimals  = Number(dec);
-
-        $('evmAddrDisplay').textContent = shortAddr(evmAccount);
-        $('evmAddrDisplay').classList.remove('empty');
-        $('connectEvmBtn').textContent = '✓';
-        $('connectEvmBtn').classList.add('done');
-        $('connectEvmBtn').disabled    = true;
-        $('approveBtn').disabled = false;
-        $('burnBtn').disabled    = false;
-        $('goLinkBtn').disabled  = false;
-        setStatus($('evmStatus'), `Connected: ${evmAccount}`, 'ok');
-      } catch(e) {
-        setStatus($('evmStatus'), 'Error: ' + (e.message || e), 'err');
-      }
-    };
-
-    // ─── EVM – APPROVE ────────────────────────────────────────────────────────
-    $('approveBtn').onclick = async () => {
-      const raw = $('amount').value.replace(/\s/g,'');
-      if (!raw || isNaN(raw) || Number(raw) <= 0) return alert("Enter opXEN amount.");
-      const amtWei = toWei(raw, tokenDecimals);
-      try {
-        setStatus($('evmStatus'), "Waiting for Approve confirmation...");
-        await xenContract.methods.approve(BURNER_ADDRESS, amtWei).send({ from: evmAccount });
-        setStatus($('evmStatus'), "Approve OK! You can now burn.", 'ok');
-      } catch(e) {
-        setStatus($('evmStatus'), 'Approve error: ' + (e.message || e), 'err');
-      }
-    };
-
-    // ─── EVM – BURN ───────────────────────────────────────────────────────────
-    $('burnBtn').onclick = async () => {
-      const raw = $('amount').value.replace(/\s/g,'');
-      if (!raw || isNaN(raw) || Number(raw) <= 0) return alert("Enter opXEN amount.");
-      const amtWei = toWei(raw, tokenDecimals);
-
-      const alw = await xenContract.methods.allowance(evmAccount, BURNER_ADDRESS).call();
-      if (BigInt(alw) < BigInt(amtWei))
-        return alert("Click Approve first!");
-
-      try {
-        await burnerContract.methods.burn(amtWei).call({ from: evmAccount });
-      } catch(sim) {
-        return alert("Transaction will fail:\n" + (sim.message || sim));
-      }
-
-      try {
-        setStatus($('evmStatus'), "Burning in progress...");
-        const tx = await burnerContract.methods.burn(amtWei).send({ from: evmAccount });
-
-        const resp = await fetch('/api/burn', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            evm_address: evmAccount,
-            burn_tx:     tx.transactionHash,
-            burn_amount: raw
-          })
-        });
-        const data = await resp.json();
-        if (!resp.ok) throw new Error(data.error || 'Server error');
-
-        const now = new Date();
-        burnHistory.unshift({
-          tx: tx.transactionHash,
-          amount: raw,
-          time: now.toLocaleTimeString('en')
-        });
-        renderBurnHistory();
-
-        $('burnStats').style.display = 'grid';
-        $('statMyTotal').textContent = fmtNum(data.my_total);
-        $('statMyShare').textContent = data.my_share_pct.toFixed(2) + '%';
-        $('statParticipants').textContent = data.participants;
-
-        setStatus($('evmStatus'),
-          `✓ Burned ${fmtNum(raw)} opXEN! (total: ${fmtNum(data.my_total)})`, 'ok');
-
-        $('amount').value = '';
-
-      } catch(e) {
-        setStatus($('evmStatus'), 'Burn error: ' + (e.message || e), 'err');
-      }
-    };
-
-    // ─── NAVIGATION ───────────────────────────────────────────────────────────
-    $('goLinkBtn').onclick     = () => showView('link');
-    $('backToBurnBtn').onclick = () => showView('burn');
-    $('burnMoreBtn').onclick   = () => showView('burn');
-
-    // ─── SVM – WALLET SELECTION ───────────────────────────────────────────────
-    function selectSvmWallet(name, icon) {
-      svmWalletName = name;
-      $('svmWalletLabel').textContent = name + ' · X1';
-      $('connectSvmBtn').disabled = false;
-      setStatus($('svmStatus'), `Selected: ${name} — click Connect`, '');
-    }
-
-    $('btnBackpack').onclick = () => selectSvmWallet('Backpack', '🎒');
-    $('btnX1').onclick       = () => selectSvmWallet('X1 Wallet', '⚡');
-
-    // ─── SVM – CONNECT ───────────────────────────────────────────────────────
-    $('connectSvmBtn').onclick = async () => {
-      const bp = window.backpack;
-      if (!bp) {
-        return alert(
-          `${svmWalletName || 'Backpack/X1'} not found!\n\n` +
-          'Install Backpack Wallet from backpack.app\n' +
-          'X1 Wallet is a Backpack fork — uses the same extension\n' +
-          'with custom RPC: https://rpc.mainnet.x1.xyz'
-        );
-      }
-      svmProvider = bp;
-      try {
-        const resp = await svmProvider.connect();
-        svmPublicKey = (resp.publicKey || svmProvider.publicKey).toString();
-
-        $('svmAddrDisplay').textContent = shortAddr(svmPublicKey);
-        $('svmAddrDisplay').classList.remove('empty');
-        $('connectSvmBtn').textContent  = '✓';
-        $('connectSvmBtn').classList.add('done');
-        $('connectSvmBtn').disabled     = true;
-        $('payAndLinkBtn').disabled     = false;
-
-        $('btnBackpack').disabled = true;
-        $('btnX1').disabled       = true;
-
-        setStatus($('svmStatus'), `${svmWalletName}: ${svmPublicKey}`, 'ok');
-      } catch(e) {
-        setStatus($('svmStatus'),
-          `${svmWalletName} error: ` + (e.message || e), 'err');
-      }
-    };
-
-    // ─── SVM – PAY XNT + LINK ────────────────────────────────────────────────
-    $('payAndLinkBtn').onclick = async () => {
-      if (!svmPublicKey || !evmAccount) return;
-
-      setStatus($('svmStatus'), "Preparing XNT transfer...");
-
-      let xntTxSig;
-
-      try {
-        const rpcUrl     = "https://rpc.mainnet.x1.xyz";
-        const connection = new solanaWeb3.Connection(rpcUrl, "confirmed");
-
-        const treasuryPk = new solanaWeb3.PublicKey(XNT_TREASURY);
-        const payerPk    = new solanaWeb3.PublicKey(svmPublicKey);
-
-        const transferIx = solanaWeb3.SystemProgram.transfer({
-          fromPubkey: payerPk,
-          toPubkey:   treasuryPk,
-          lamports:   XNT_FEE_LAMPORTS
-        });
-
-        const { blockhash } = await connection.getLatestBlockhash();
-        const tx = new solanaWeb3.Transaction();
-        tx.add(transferIx);
-        tx.recentBlockhash = blockhash;
-        tx.feePayer = payerPk;
-
-        setStatus($('svmStatus'), "Confirm transaction in wallet...");
-
-        const result = await svmProvider.signAndSendTransaction(tx);
-        xntTxSig = result.signature;
-
-      } catch(e) {
-        setStatus($('svmStatus'), 'XNT payment error: ' + (e.message || e), 'err');
-        return;
-      }
-
-      setStatus($('svmStatus'), "Registering wallet link...");
-
-      try {
-        const resp = await fetch('/api/link', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            evm_address: evmAccount,
-            svm_address: svmPublicKey,
-            xnt_tx:      xntTxSig
-          })
-        });
-        const data = await resp.json();
-        if (!resp.ok) throw new Error(data.error || 'Server error');
-
-        const statusResp = await fetch(`/api/status/${evmAccount}`);
-        const statusData = await statusResp.json();
-
-        $('s3evm').textContent    = shortAddr(evmAccount);
-        $('s3svm').textContent    = shortAddr(svmPublicKey);
-        $('s3burned').textContent = fmtNum(statusData.my_total) + ' opXEN';
-        $('s3share').textContent  = statusData.my_share_pct.toFixed(2) + '%';
-
-        showView('success');
-      } catch(e) {
-        setStatus($('svmStatus'), 'Error: ' + (e.message || e), 'err');
-      }
-    };
-
-    // Init
-    showView('burn');
-  </script>
 </body>
 </html>

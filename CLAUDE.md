@@ -53,7 +53,8 @@ wallet_links(id, evm_address UNIQUE, svm_address, xnt_tx, created_at)
 
 | Kontrakt | Adres | Sieć |
 |---|---|---|
-| XENBurner (proxy) | `0x83E96ff0944BD10aF19A054902225357DccE6d91` | Optimism |
+| XENBurner (v2, wrapper) | `0xdDd1A839b790Aa4A12C665417Ff37F2Ab39F4FE2` | Optimism |
+| XENBurner (v1, deprecated) | `0x83E96ff0944BD10aF19A054902225357DccE6d91` | Optimism |
 
 Pliki: [contracts/XENBurner.sol](contracts/XENBurner.sol), [contracts/IBurnRedeemable.sol](contracts/IBurnRedeemable.sol), [contracts/IBurnableToken.sol](contracts/IBurnableToken.sol)
 

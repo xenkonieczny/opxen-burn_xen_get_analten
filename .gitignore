@@ -8,3 +8,14 @@ venv/
 .DS_Store
 archiwum/
 !DEPLOY_PROMPT.md
+
+# Local-only: design/scratch/audit — not deployed
+PREZENTACJA/
+artifacts/
+audit/
+EGGPLANT/
+ANALTENA Design System/
+ANALTENA Design System.zip
+Security Review.pdf
+templates/OLD_index.html
+2026-*.jpg
